@@ -74,22 +74,42 @@ const ECGViewer: React.FC<ECGViewerProps> = ({ signal, fs, height = 300, waves, 
                 layout={{
                     autosize: true,
                     height: typeof height === 'number' ? height : undefined,
-                    margin: { l: 40, r: 20, t: 10, b: 40 },
+                    margin: { l: 50, r: 20, t: 30, b: 50 },
                     paper_bgcolor: 'white',
-                    plot_bgcolor: 'white',
+                    plot_bgcolor: '#fff5f5', // Light pink background like ECG paper
                     xaxis: {
                         title: 'Time (seconds)',
-                        gridcolor: '#f1f5f9',
+                        range: [0, Math.min(2, time[time.length - 1])],
+                        // Standard ECG Paper: 25mm/s implies 0.04s per 1mm square
+                        dtick: 0.2, // Large squares (5mm) = 0.2s
+                        gridcolor: '#feb2b2', // Rose color for large squares
+                        gridwidth: 1.5,
                         showgrid: true,
                         zeroline: false,
-                        range: [0, Math.min(2, time[time.length - 1])],
+                        minor: {
+                            dtick: 0.04, // Small squares (1mm) = 0.04s
+                            showgrid: true,
+                            gridcolor: '#fed7d7', // Lighter pink for small squares
+                            gridwidth: 0.5,
+                        }
                     },
                     yaxis: {
                         title: 'Amplitude (mV)',
-                        gridcolor: '#f1f5f9',
-                        showgrid: true,
-                        zeroline: false,
                         range: [-2, 2],
+                        // Standard ECG Paper: 10mm/mV implies 0.1mV per 1mm square
+                        dtick: 0.5, // Large squares (5mm) = 0.5mV
+                        gridcolor: '#feb2b2',
+                        gridwidth: 1.5,
+                        showgrid: true,
+                        zeroline: true,
+                        zerolinecolor: '#feb2b2',
+                        zerolinewidth: 2,
+                        minor: {
+                            dtick: 0.1, // Small squares (1mm) = 0.1mV
+                            showgrid: true,
+                            gridcolor: '#fed7d7',
+                            gridwidth: 0.5,
+                        }
                     },
                     shapes: shapes,
                     dragmode: 'pan',
@@ -98,7 +118,7 @@ const ECGViewer: React.FC<ECGViewerProps> = ({ signal, fs, height = 300, waves, 
                 }}
                 config={{
                     responsive: true,
-                    displayModeBar: false,
+                    displayModeBar: true, // Show mode bar for better navigation
                     scrollZoom: true,
                 }}
                 className="w-full h-full"
