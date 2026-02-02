@@ -12,6 +12,12 @@ export interface ECGAnalysisResult {
     report_id: string;
     explanation: string;
     signal: number[];
+    waves: {
+        p_associated: [number, number][];
+        p_dissociated: [number, number][];
+        qrs: [number, number][];
+        t: [number, number][];
+    };
 }
 
 export interface ECGData {
