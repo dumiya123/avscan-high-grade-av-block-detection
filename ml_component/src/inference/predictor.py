@@ -1,5 +1,14 @@
 """
-End-to-end inference predictor for AV Block Detection
+AtrionNet System Orchestrator: Inference Pipeline
+This module coordinates the entire lifecycle of an ECG analysis request.
+
+Workflow:
+1.  **Ingestion**: Receives raw ECG data.
+2.  **Preprocessing**: Filters and normalizes the signal to match training distribution.
+3.  **Forward Pass**: Executes the Dual-Task Attention U-Net.
+4.  **Temporal Analysis**: Validates AI mask boundaries against clinical rhythm rules.
+5.  **Explainability**: Generates Grad-CAM heatmaps and textual reports.
+6.  **Packaging**: Formats results for the Clinical Dashboard UI.
 """
 
 import torch
@@ -21,20 +30,18 @@ import matplotlib.pyplot as plt
 
 class AVBlockPredictor:
     """
-    Complete inference pipeline for AV block detection with XAI
+    The main interface for the AtrionNet ML Component.
+    
+    This class wraps the PyTorch model and all auxiliary analysis tools 
+    (Grad-CAM, Temporal Analyzer, Explainer) into a single deterministic pipeline.
     """
     
     def __init__(self, checkpoint: str, fs: int = 500):
-        """
-        Args:
-            checkpoint: Path to model checkpoint
-            fs: Sampling frequency
-        """
         self.fs = fs
         self.device = get_device()
         
-        # Load model
-        print("Loading model...")
+        # Architecture Initialization
+        print("Loading AtrionNet Architecture...")
         self.model = ECGUNet(
             in_channels=1,
             num_seg_classes=5,
@@ -42,40 +49,32 @@ class AVBlockPredictor:
             use_attention=True
         ).to(self.device)
         
+        # Weight Loading: Maps trained parameters onto the architecture
         load_checkpoint(checkpoint, self.model, device=self.device)
-        self.model.eval()
+        self.model.eval() # Freezes Dropout and BatchNorm for inference
         
-        # Initialize components
         self.temporal_analyzer = TemporalAnalyzer(fs=fs)
         self.explainer = ClinicalExplainer()
         self.reporter = ClinicalReport()
         
-        # Setup Grad-CAM
+        # XAI Setup: We target the final convolution of the encoder 
+        # (enc4) for Grad-CAM as it contains the richest spatial features.
         target_layer = self.model.enc4.conv
         self.gradcam = GradCAM(self.model, target_layer)
         
-        print("Predictor ready!")
-    
     def preprocess(self, ecg_signal: np.ndarray) -> torch.Tensor:
         """
-        Preprocess raw ECG signal
-        
-        Args:
-            ecg_signal: Raw ECG signal
-            
-        Returns:
-            Preprocessed tensor (1, 1, seq_len)
+        Input Clean-up Pipeline.
+        1. Bandpass filter (0.5-40Hz).
+        2. Z-score normalization.
+        3. Dimension alignment (ensuring exactly 5000 samples).
         """
-        # Apply bandpass filter
         filtered = bandpass_filter(ecg_signal, fs=self.fs)
-        
-        # Normalize
         normalized = normalize_signal(filtered)
         
-        # Convert to tensor
         tensor = torch.from_numpy(normalized).float().unsqueeze(0).unsqueeze(0)
         
-        # Pad or crop to 5000 samples
+        # Dynamic Shaping: Ensure input matches the model's fixed sequence length
         if tensor.shape[2] < 5000:
             pad_length = 5000 - tensor.shape[2]
             tensor = torch.nn.functional.pad(tensor, (0, pad_length))
@@ -86,56 +85,47 @@ class AVBlockPredictor:
     
     def predict(self, ecg_signal: np.ndarray, generate_report: bool = True) -> dict:
         """
-        Run complete inference pipeline
+        The Pipeline Forward Pass.
         
-        Args:
-            ecg_signal: Raw ECG signal (numpy array)
-            generate_report: Whether to generate full clinical report
-            
-        Returns:
-            Dictionary with all results
+        This method executes the high-level logic of 'What happens when 
+        the user clicks Upload'.
         """
-        # Preprocess
+        # 1. Prepare Signal
         input_tensor = self.preprocess(ecg_signal).to(self.device)
         
-        # Run model
+        # 2. AI Inference: Get raw segmentation masks and classification logits
         with torch.no_grad():
             seg_pred, clf_pred = self.model(input_tensor)
         
-        # Get predictions
+        # 3. Decision Logic: Interpret probabilities
         seg_mask = torch.argmax(seg_pred, dim=1)[0].cpu().numpy()
         clf_probs = torch.softmax(clf_pred, dim=1)[0].cpu().numpy()
         clf_class = torch.argmax(clf_pred, dim=1)[0].item()
         
-        # Temporal analysis
+        # 4. Clinical Verification: Run the temporal expert system
         temporal_results = self.temporal_analyzer.analyze(seg_mask)
         
-        # Grad-CAM
+        # 5. Explainability Path: Visual (Grad-CAM) + Narrative (Natural Language)
         gradcam_heatmap = self.gradcam.generate_heatmap(
             input_tensor, target_class=clf_class, task='classification'
         )
-        
-        # Get attention maps
         attention_maps = self.model.get_attention_maps(input_tensor)
         
-        # Calculate confidence
-        seg_confidence = self._calculate_seg_confidence(seg_pred[0])
-        clf_confidence = clf_probs[clf_class]
-        
-        # Get refined classification from temporal analysis
+        # 6. Hybrid Reasoning: Combine AI prediction + Clinical Heuristics
+        # If the temporal analyzer finds strong evidence of a block (high confidence), 
+        # it can override or refine the raw neural network output.
         refined_class, refined_label, refined_confidence = temporal_results['av_block_type']
         
-        # Prepare results - Prioritize refined analysis for clinical fields
         results = {
             'segmentation': seg_mask,
-            'seg_confidence': seg_confidence,
+            'seg_confidence': self._calculate_seg_confidence(seg_pred[0]),
             'waves': temporal_results['waves'],
             'intervals': temporal_results['intervals'],
             'diagnosis': {
                 'av_block_type': refined_label,
                 'av_block_class': refined_class,
                 'nn_class': clf_class,
-                'confidence': float(max(clf_confidence, refined_confidence)),
+                'confidence': float(max(clf_probs[clf_class], refined_confidence)),
                 'severity': self.explainer.av_block_descriptions[refined_class]['severity'],
                 'urgency': self.explainer.av_block_descriptions[refined_class]['urgency']
             },
@@ -146,14 +136,13 @@ class AVBlockPredictor:
             }
         }
         
-        # Generate explanation
+        # 7. Narrative Generation: Explaining the 'Why'
         if generate_report:
-            print("Generating explanation...")
             explanation = self.explainer.generate_full_explanation(
                 waves=temporal_results['waves'],
                 intervals=temporal_results['intervals'],
-                av_block_type=(clf_class, results['diagnosis']['av_block_type'], clf_confidence),
-                seg_confidence=seg_confidence
+                av_block_type=(clf_class, results['diagnosis']['av_block_type'], results['diagnosis']['confidence']),
+                seg_confidence=results['seg_confidence']
             )
             results['xai']['explanation'] = explanation
         

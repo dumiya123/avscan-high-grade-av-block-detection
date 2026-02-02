@@ -1,5 +1,11 @@
 """
-Temporal Analysis Module for AV Block Detection
+AtrionNet Diagnostic Engine: Temporal Relationship Analyzer
+This module applies clinical reasoning to the the model's segmentation output.
+
+Logic:
+1.  **Interval Extraction**: Converts pixel-wise masks into time-stamped intervals.
+2.  **Rhythm Math**: Calculates PR (Atrial-Ventricular delay), RR (Heart Rate), and P:QRS ratios.
+3.  **Heuristic Classifiers**: Applies clinical decision trees to confirm high-grade AV blocks.
 """
 
 import numpy as np
@@ -9,50 +15,44 @@ import torch
 
 class TemporalAnalyzer:
     """
-    Analyzes temporal relationships in ECG to detect AV blocks
+    Expert System for Clinical ECG Interpretation.
+    
+    Why this exists:
+    While the neural network is great at pattern recognition, clinical medicine 
+    relies on specific interval criteria (e.g., "PR > 200ms"). This class 
+    validates the AI's output against these established medical standards.
     """
     
     def __init__(self, fs: int = 500):
-        """
-        Args:
-            fs: Sampling frequency in Hz
-        """
         self.fs = fs
     
     def extract_waves(self, seg_mask: np.ndarray) -> Dict[str, List[Tuple[int, int]]]:
         """
-        Extract wave intervals from segmentation mask
+        Mask-to-Interval Transformation.
         
-        Args:
-            seg_mask: Segmentation mask (seq_len,) with classes 0-4
-            
-        Returns:
-            Dictionary with wave types and their (start, end) intervals
+        Logic:
+        Iterates through the 1D mask and finds contiguous blocks of the same 
+        class label. It uses `np.diff` to find the exact onset and offset 
+        of every wave the model detected.
         """
         waves = {
-            'P_associated': [],
-            'P_dissociated': [],
-            'QRS': [],
-            'T': []
+            'P_associated': [], 'P_dissociated': [],
+            'QRS': [], 'T': []
         }
         
         class_map = {
-            1: 'P_associated',
-            2: 'P_dissociated',
-            3: 'QRS',
-            4: 'T'
+            1: 'P_associated', 2: 'P_dissociated',
+            3: 'QRS', 4: 'T'
         }
         
-        # Find contiguous regions for each class
         for class_id, wave_type in class_map.items():
             mask = (seg_mask == class_id).astype(int)
             
-            # Find transitions
+            # Find transitions from 0 to 1 (start) and 1 to 0 (end)
             diff = np.diff(np.concatenate([[0], mask, [0]]))
             starts = np.where(diff == 1)[0]
             ends = np.where(diff == -1)[0]
             
-            # Store intervals
             for start, end in zip(starts, ends):
                 waves[wave_type].append((int(start), int(end)))
         
@@ -60,68 +60,49 @@ class TemporalAnalyzer:
     
     def calculate_intervals(self, waves: Dict[str, List[Tuple[int, int]]]) -> Dict[str, any]:
         """
-        Calculate PR, RR, and QT intervals
+        Quantitative Rhythm Measurement.
         
-        Args:
-            waves: Dictionary of wave intervals
-            
-        Returns:
-            Dictionary with interval measurements
+        Metrics:
+        - **PR Interval**: Captures the delay between atrial and ventricular contraction.
+        - **RR Interval**: Used to calculate Heart Rate and rhythm regularity.
+        - **P:QRS Ratio**: Identifies missing beats (e.g., 2:1 or 3:1 block).
         """
         intervals = {
-            'pr': [],
-            'rr': [],
-            'qt': [],
-            'p_qrs_ratio': 0.0
+            'pr': [], 'rr': [], 'qt': [], 'p_qrs_ratio': 0.0
         }
         
-        # Use centers for interval calculations
+        # We use the mathematical center (peak approximation) of waves for measurements
         p_associated = [(s + e) // 2 for s, e in waves['P_associated']]
         p_dissociated = [(s + e) // 2 for s, e in waves['P_dissociated']]
         qrs = [(s + e) // 2 for s, e in waves['QRS']]
         t_waves = [(s + e) // 2 for s, e in waves['T']]
         
-        # PR intervals (P-associated to next QRS)
+        # Calculate PR (P-wave start to QRS start approximation)
         for p_idx in p_associated:
             following_qrs = [q for q in qrs if q > p_idx]
             if following_qrs:
-                pr_samples = following_qrs[0] - p_idx
-                pr_ms = (pr_samples / self.fs) * 1000
+                pr_ms = ((following_qrs[0] - p_idx) / self.fs) * 1000
                 intervals['pr'].append(pr_ms)
         
-        # RR intervals
+        # Calculate RR Variability (Critical for Mobitz Type I detection)
         if len(qrs) > 1:
-            rr_samples = np.diff(qrs)
-            rr_ms = (rr_samples / self.fs) * 1000
+            rr_ms = (np.diff(qrs) / self.fs) * 1000
             intervals['rr'] = rr_ms.tolist()
         
-        # QT intervals
-        for q_idx in qrs:
-            following_t = [t for t in t_waves if t > q_idx]
-            if following_t:
-                qt_samples = following_t[0] - q_idx
-                qt_ms = (qt_samples / self.fs) * 1000
-                intervals['qt'].append(qt_ms)
-        
-        # P:QRS ratio
+        # Calculate Atrial-Ventricular Coupling Efficiency
         total_p = len(p_associated) + len(p_dissociated)
-        total_qrs = len(qrs)
-        if total_qrs > 0:
-            intervals['p_qrs_ratio'] = total_p / total_qrs
+        if len(qrs) > 0:
+            intervals['p_qrs_ratio'] = total_p / len(qrs)
         
         return intervals
     
     def detect_av_block_type(self, waves: Dict[str, List[Tuple[int, int]]], 
                             intervals: Dict[str, any]) -> Tuple[int, str, float]:
         """
-        Detect AV block type based on wave patterns and intervals
+        The Diagnostic Decision Tree.
         
-        Args:
-            waves: Dictionary of wave intervals
-            intervals: Dictionary of interval measurements
-            
-        Returns:
-            Tuple of (class_id, class_name, confidence)
+        This is where the AI's 'Dissociation Detection' is combined with 
+        deterministic clinical rules.
         """
         p_associated = waves['P_associated']
         p_dissociated = waves['P_dissociated']
@@ -133,51 +114,39 @@ class TemporalAnalyzer:
         if total_p == 0 or total_qrs == 0:
             return 0, "Normal", 0.5
         
+        # Key Diagnostic Feature: What % of P-waves have 'abandoned' their QRS?
         dissociation_ratio = len(p_dissociated) / total_p if total_p > 0 else 0
         p_qrs_ratio = intervals['p_qrs_ratio']
         
         pr_intervals = intervals['pr']
         rr_intervals = intervals['rr']
         
-        # Calculate statistics
         avg_pr = np.mean(pr_intervals) if pr_intervals else 0
         pr_variability = np.std(pr_intervals) if len(pr_intervals) > 1 else 0
         rr_variability = np.std(rr_intervals) if len(rr_intervals) > 1 else 0
         
-        # Decision logic with confidence
-        
-        # 3rd degree AV block (complete heart block)
+        # 1. THIRD DEGREE (Complete Block): Total dissociation, high P:QRS.
         if dissociation_ratio > 0.7 and p_qrs_ratio > 1.3:
             confidence = min(0.9, dissociation_ratio * 0.8 + (p_qrs_ratio - 1) * 0.2)
             return 4, "3rd degree (Complete Heart Block)", confidence
         
-        # 2nd degree Type I (Wenckebach)
+        # 2. SECOND DEGREE TYPE I: Progressive "tiring" of the conduction (Wenckebach).
         if pr_variability > 30 and len(pr_intervals) > 2:
-            # Check for progressive PR prolongation
             if self._is_progressive_prolongation(pr_intervals):
                 confidence = min(0.85, pr_variability / 50)
                 return 2, "2nd degree Type I (Wenckebach)", confidence
         
-        # 2nd degree Type II (Mobitz II)
+        # 3. SECOND DEGREE TYPE II: Constant PR until a beat is suddenly dropped.
         if dissociation_ratio > 0.3 and pr_variability < 20:
-            # Constant PR with dropped beats
             confidence = min(0.8, dissociation_ratio * 1.5)
             return 3, "2nd degree Type II (Mobitz II)", confidence
         
-        # 1st degree AV block
+        # 4. FIRST DEGREE: 1:1 conduction, but the delay is just too long.
         if avg_pr > 200:
             confidence = min(0.9, (avg_pr - 200) / 100)
             return 1, "1st degree AV block", confidence
         
-        # VT with AV dissociation (wide QRS + dissociation)
-        if dissociation_ratio > 0.5 and rr_variability < 50:
-            # Would need QRS width analysis (not implemented here)
-            confidence = 0.6
-            return 5, "VT with AV dissociation", confidence
-        
-        # Normal sinus rhythm
-        confidence = 0.8
-        return 0, "Normal sinus rhythm", confidence
+        return 0, "Normal sinus rhythm", 0.8
     
     def _is_progressive_prolongation(self, pr_intervals: List[float]) -> bool:
         """

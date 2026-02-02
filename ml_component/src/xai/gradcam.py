@@ -1,5 +1,16 @@
 """
-Grad-CAM implementation for ECG U-Net
+AtrionNet XAI: Grad-CAM (Gradient-weighted Class Activation Mapping)
+This module provides the 'Visual Why' for the model's classification decisions.
+
+Mathematics:
+1.  **Forward Pass**: Compute the probability of the diagnosis (e.g., 3rd Degree Block).
+2.  **Backprop**: Calculate gradients of the diagnosis with respect to the 
+    last convolutional layer's features.
+3.  **Importance Weighting**: Average the gradients across time to see which 
+    feature channels were most important globally.
+4.  **Heatmap Generation**: Multiply the feature maps by these weights and 
+    sum them up. Only positive influences (ReLU) are kept to show what 
+    *contributed* to the decision.
 """
 
 import torch
@@ -10,77 +21,68 @@ from typing import Optional
 
 class GradCAM:
     """
-    Grad-CAM for visualizing which parts of ECG influenced the model's decision
+    Visual Explanation Engine.
+    
+    Why: Clinicians need to see which P-waves or QRS complexes the model 
+    actually "looked at" when making a diagnosis. If the model is focusing 
+    on baseline noise, the diagnosis is likely a false positive.
     """
     
     def __init__(self, model, target_layer):
-        """
-        Args:
-            model: PyTorch model
-            target_layer: Layer to compute Grad-CAM on (e.g., last encoder block)
-        """
         self.model = model
         self.target_layer = target_layer
         self.gradients = None
         self.activations = None
         
-        # Register hooks
+        # Hooks: These allow us to 'catch' data flowing through the model 
+        # without modifying the core model code.
         self.target_layer.register_forward_hook(self.save_activation)
         self.target_layer.register_backward_hook(self.save_gradient)
     
     def save_activation(self, module, input, output):
-        """Hook to save activations"""
         self.activations = output.detach()
     
     def save_gradient(self, module, grad_input, grad_output):
-        """Hook to save gradients"""
         self.gradients = grad_output[0].detach()
     
     def generate_heatmap(self, input_signal, target_class=None, task='classification'):
         """
-        Generate Grad-CAM heatmap
-        
-        Args:
-            input_signal: Input ECG signal (1, 1, seq_len)
-            target_class: Target class for gradient computation
-            task: 'classification' or 'segmentation'
-            
-        Returns:
-            Heatmap (seq_len,)
+        The Heatmap Synthesis Pipeline.
         """
         self.model.eval()
         
-        # Forward pass
+        # 1. Prediction Stage
         seg_out, clf_out = self.model(input_signal)
         
-        # Select output based on task
+        # 2. Select the 'Evidence' we want to explain
         if task == 'classification':
             if target_class is None:
                 target_class = torch.argmax(clf_out, dim=1)
             score = clf_out[0, target_class]
-        else:  # segmentation
+        else:
             if target_class is None:
-                target_class = 3  # QRS class
+                target_class = 3
             score = seg_out[0, target_class, :].mean()
         
-        # Backward pass
+        # 3. Backpropagation Stage: Calculate how much each neuron in the 
+        # target_layer contributed to the final score.
         self.model.zero_grad()
         score.backward()
         
-        # Get gradients and activations
-        gradients = self.gradients[0]  # (channels, seq_len)
-        activations = self.activations[0]  # (channels, seq_len)
+        # 4. Feature Combination Stage
+        gradients = self.gradients[0]
+        activations = self.activations[0]
         
-        # Global average pooling of gradients
-        weights = torch.mean(gradients, dim=1, keepdim=True)  # (channels, 1)
+        # GAP (Global Average Pooling): Reduce gradients to a single weight per channel
+        weights = torch.mean(gradients, dim=1, keepdim=True)
         
-        # Weighted combination of activation maps
-        cam = torch.sum(weights * activations, dim=0)  # (seq_len,)
+        # Linear Combination: Sum of [weights * activations]
+        cam = torch.sum(weights * activations, dim=0)
         
-        # ReLU
+        # ReLU: We only care about features that POSITIVELY impacted the score
         cam = F.relu(cam)
         
-        # Normalize
+        # Normalization: Map to 0.0 - 1.0 for visualization
         cam = cam - cam.min()
         cam = cam / (cam.max() + 1e-8)
         

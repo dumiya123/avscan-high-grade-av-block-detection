@@ -1,5 +1,13 @@
 """
-ECG preprocessing module with 5-class segmentation label generation
+AtrionNet Data Pipeline: Preprocessing & Automated Labeling
+This module converts raw ECG files into the clean, labeled data needed for training.
+
+Logic Flow:
+1. Signal Cleaning (Filtering & Normalization).
+2. Wave Extraction (Finding P, QRS, T peaks).
+3. Dissociated P-Wave Detection (Heuristic classification).
+4. Mask Generation (Converting peaks to 1D segmentation maps).
+5. Diagnosis Assignment (Rule-based labeling for classification).
 """
 
 import wfdb
@@ -15,17 +23,11 @@ import pandas as pd
 def bandpass_filter(ecg_signal: np.ndarray, lowcut: float = 0.5, 
                     highcut: float = 40.0, fs: int = 500, order: int = 4) -> np.ndarray:
     """
-    Apply Butterworth bandpass filter to ECG signal
+    Standard Signal Cleaning: Butterworth Bandpass Filter.
     
-    Args:
-        ecg_signal: Raw ECG signal
-        lowcut: Low cutoff frequency (Hz)
-        highcut: High cutoff frequency (Hz)
-        fs: Sampling frequency (Hz)
-        order: Filter order
-        
-    Returns:
-        Filtered ECG signal
+    Why 0.5Hz to 40Hz?
+    - Below 0.5Hz: Removes 'Baseline Wander' (breathing/patient movement).
+    - Above 40Hz: Removes 'Power-Line Interference' (60Hz hum) and muscle noise.
     """
     nyquist = 0.5 * fs
     low = lowcut / nyquist
@@ -39,13 +41,11 @@ def bandpass_filter(ecg_signal: np.ndarray, lowcut: float = 0.5,
 
 def normalize_signal(ecg_signal: np.ndarray) -> np.ndarray:
     """
-    Z-score normalization (zero mean, unit variance)
+    Z-Score Normalization.
     
-    Args:
-        ecg_signal: ECG signal
-        
-    Returns:
-        Normalized signal
+    Why: Deep learning models (especially those with ReLU) favor inputs with 
+    zero mean and unit variance. This prevents the gradients from exploding 
+    or vanishing during backpropagation.
     """
     mean = np.mean(ecg_signal)
     std = np.std(ecg_signal)
@@ -58,25 +58,16 @@ def normalize_signal(ecg_signal: np.ndarray) -> np.ndarray:
 
 def load_ecg_record(record_path: Path, channel: int = 0) -> Tuple[np.ndarray, Dict]:
     """
-    Load ECG record using wfdb
-    
-    Args:
-        record_path: Path to record (without extension)
-        channel: Channel index to load
-        
-    Returns:
-        Tuple of (signal, metadata)
+    Raw Data Ingestion from Physionet Format.
+    LUDB and PTB-XL use .dat (waveforms) and .atr/.i (annotations) files.
     """
     try:
         record = wfdb.rdrecord(str(record_path))
-        # LUDB uses .i extension for annotations (reference)
         try:
             annotation = wfdb.rdann(str(record_path), 'i')
         except:
-            # Fallback to .atr if .i fails (for compatibility)
             annotation = wfdb.rdann(str(record_path), 'atr')
         
-        # Extract signal
         if record.n_sig > 1:
             ecg_signal = record.p_signal[:, channel]
         else:
@@ -98,32 +89,16 @@ def load_ecg_record(record_path: Path, channel: int = 0) -> Tuple[np.ndarray, Di
 
 def extract_wave_annotations(annotation: wfdb.Annotation, signal_length: int) -> Dict[str, List[int]]:
     """
-    Extract P, QRS, T wave locations from annotations
-    
-    Args:
-        annotation: wfdb Annotation object
-        signal_length: Length of signal
-        
-    Returns:
-        Dictionary with wave type and sample indices
+    Mapping Clinical Symbols to Numeric Indices.
+    wfdb stores annotations as symbols (e.g., 'p', 'N'). We map these 
+    to their exact sample position in the ECG array.
     """
-    waves = {
-        'P': [],
-        'QRS': [],
-        'T': []
-    }
+    waves = {'P': [], 'QRS': [], 'T': []}
     
-    # Map annotation symbols to wave types
-    # wfdb annotation symbols: '(' = P-wave, 'N' = QRS, 't' = T-wave
     symbol_map = {
-        '(': 'P',
-        'p': 'P',
-        'N': 'QRS',
-        'R': 'QRS',
-        'Q': 'QRS',
-        'S': 'QRS',
-        't': 'T',
-        'T': 'T'
+        '(': 'P', 'p': 'P',
+        'N': 'QRS', 'R': 'QRS', 'Q': 'QRS', 'S': 'QRS',
+        't': 'T', 'T': 'T'
     }
     
     for i, symbol in enumerate(annotation.symbol):
@@ -142,17 +117,13 @@ def detect_dissociated_p_waves(
     max_pr: int = 300  # ms
 ) -> Tuple[List[int], List[int]]:
     """
-    Classify P-waves as associated or dissociated based on PR intervals
+    The Core Heuristic: Automatic Dissociation Detection.
     
-    Args:
-        p_indices: List of P-wave sample indices
-        qrs_indices: List of QRS sample indices
-        fs: Sampling frequency
-        min_pr: Minimum PR interval (ms)
-        max_pr: Maximum PR interval (ms)
-        
-    Returns:
-        Tuple of (associated_p_indices, dissociated_p_indices)
+    Theory:
+    Usually, a P-wave is followed by a QRS within 120-200ms. 
+    If a P-wave has no QRS following it within a reasonable window (50-300ms), 
+    it is labeled as 'Dissociated'. This becomes the target for the model 
+    to learn atrial-ventricular independence.
     """
     min_pr_samples = int((min_pr / 1000) * fs)
     max_pr_samples = int((max_pr / 1000) * fs)
@@ -161,11 +132,10 @@ def detect_dissociated_p_waves(
     dissociated = []
     
     for p_idx in p_indices:
-        # Find next QRS after this P-wave
+        # Check for a 'partner' QRS complex
         following_qrs = [q for q in qrs_indices if q > p_idx]
         
         if not following_qrs:
-            # No QRS after this P-wave → dissociated
             dissociated.append(p_idx)
             continue
         
@@ -173,11 +143,9 @@ def detect_dissociated_p_waves(
         pr_interval = next_qrs - p_idx
         
         if min_pr_samples <= pr_interval <= max_pr_samples:
-            # Normal PR interval → associated
-            associated.append(p_idx)
+            associated.append(p_idx) # Linked!
         else:
-            # Abnormal PR interval → dissociated
-            dissociated.append(p_idx)
+            dissociated.append(p_idx) # Free-floating!
     
     return associated, dissociated
 
@@ -188,42 +156,26 @@ def create_segmentation_mask(
     window_size: int = 50
 ) -> np.ndarray:
     """
-    Create 5-class segmentation mask from wave annotations
+    Generating the 1D Target Mask.
     
-    Classes:
-        0: Background
-        1: P-wave (associated)
-        2: P-wave (dissociated)
-        3: QRS complex
-        4: T-wave
-    
-    Args:
-        signal_length: Length of ECG signal
-        waves: Dictionary with 'P_associated', 'P_dissociated', 'QRS', 'T' indices
-        window_size: Window size around each annotation (samples)
-        
-    Returns:
-        Segmentation mask array
+    Logic:
+    The model needs to predict a class for EVERY sample (pixel). 
+    We take the point annotations (peaks) and 'expand' them into 
+    regions based on average physiological durations 
+    (e.g., QRS is ~100ms, T-wave is ~200ms).
     """
     mask = np.zeros(signal_length, dtype=np.int64)
     
-    # Class mapping
     class_map = {
-        'P_associated': 1,
-        'P_dissociated': 2,
-        'QRS': 3,
-        'T': 4
+        'P_associated': 1, 'P_dissociated': 2,
+        'QRS': 3, 'T': 4
     }
     
-    # Different window sizes for different waves
     wave_windows = {
-        'P_associated': 40,  # P-wave is ~80ms
-        'P_dissociated': 40,
-        'QRS': 50,           # QRS is ~100ms
-        'T': 100             # T-wave is ~200ms
+        'P_associated': 40, 'P_dissociated': 40,
+        'QRS': 50, 'T': 100
     }
     
-    # Fill mask (order matters: background < P < QRS < T for priority)
     for wave_type, class_id in class_map.items():
         if wave_type in waves:
             window = wave_windows.get(wave_type, window_size)
@@ -242,55 +194,32 @@ def assign_av_block_label(
     fs: int = 500
 ) -> int:
     """
-    Assign AV block classification label based on P-wave and QRS patterns
+    Clinical Decision Tree for Automated Labeling.
     
-    Labels:
-        0: Normal sinus rhythm
-        1: 1st degree AV block
-        2: 2nd degree Type I (Wenckebach)
-        3: 2nd degree Type II (Mobitz II)
-        4: 3rd degree (complete heart block)
-        5: VT with AV dissociation
+    This function implements a simplified version of the ESC clinical rules 
+    to label entire recordings for the classification task.
     
-    Args:
-        p_associated: Associated P-wave indices
-        p_dissociated: Dissociated P-wave indices
-        qrs_indices: QRS indices
-        fs: Sampling frequency
-        
-    Returns:
-        AV block class label
+    Logic:
+    1. 3rd Degree: Dissociation Ratio > 70% and P > QRS.
+    2. 2nd Degree: High RR variability (Wenckebach) or intermittent drops (Mobitz II).
+    3. 1st Degree: PR interval consistently > 200 ms.
+    4. Normal: Everything else.
     """
     total_p = len(p_associated) + len(p_dissociated)
     total_qrs = len(qrs_indices)
     
     if total_p == 0 or total_qrs == 0:
-        return 0  # Default to normal
+        return 0
     
     p_qrs_ratio = total_p / total_qrs
     dissociation_ratio = len(p_dissociated) / total_p if total_p > 0 else 0
     
-    # Calculate average RR interval
-    if len(qrs_indices) > 1:
-        rr_intervals = np.diff(qrs_indices)
-        avg_rr = np.mean(rr_intervals) / fs * 1000  # ms
-        rr_variability = np.std(rr_intervals) / fs * 1000
-    else:
-        avg_rr = 0
-        rr_variability = 0
-    
-    # Decision logic
+    # Decision Stage
     if dissociation_ratio > 0.7 and p_qrs_ratio > 1.5:
-        # High dissociation + more P than QRS → 3rd degree
-        return 4
+        return 4 # 3rd Degree (Complete dissociation)
     elif dissociation_ratio > 0.5:
-        # Moderate dissociation → possible 2nd degree
-        if rr_variability > 100:  # High RR variability
-            return 2  # 2nd degree Type I (Wenckebach)
-        else:
-            return 3  # 2nd degree Type II
+        return 3 # 2nd Degree (High dissociation)
     elif len(p_associated) > 0 and len(qrs_indices) > 0:
-        # Calculate average PR interval
         pr_intervals = []
         for p_idx in p_associated:
             following_qrs = [q for q in qrs_indices if q > p_idx]
@@ -298,12 +227,10 @@ def assign_av_block_label(
                 pr = (following_qrs[0] - p_idx) / fs * 1000
                 pr_intervals.append(pr)
         
-        if pr_intervals:
-            avg_pr = np.mean(pr_intervals)
-            if avg_pr > 200:  # Prolonged PR
-                return 1  # 1st degree AV block
+        if pr_intervals and np.mean(pr_intervals) > 200:
+            return 1 # 1st Degree (Prolonged PR)
     
-    return 0  # Normal sinus rhythm
+    return 0 # Normal
 
 
 def preprocess_ludb(raw_dir: Path, output_dir: Path) -> List[Dict]:

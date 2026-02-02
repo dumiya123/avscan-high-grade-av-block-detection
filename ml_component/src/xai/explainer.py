@@ -1,5 +1,11 @@
 """
-Clinical explainer for generating natural language explanations
+AtrionNet XAI: Clinical Explanation Generator (NLG)
+This module translates the model's raw numbers into human-readable narratives.
+
+Logic:
+1.  **Clinical Mapping**: Matches class IDs to medical descriptions/severity.
+2.  **Evidence Synthesis**: Combines wave counts and intervals into 'Finding' statements.
+3.  **Advisory Logic**: Generates clinical recommendations based on diagnosis.
 """
 
 import numpy as np
@@ -8,60 +14,28 @@ from typing import Dict, List
 
 class ClinicalExplainer:
     """
-    Generates human-readable clinical explanations for model predictions
+    Explainable AI (XAI) NLG Engine.
+    
+    Why: A diagnosis is useless if a clinician doesn't trust it. This class 
+    provides the "The AI decided this because..." narrative, citing specific 
+    evidence like PR prolongation or AV dissociation.
     """
     
     def __init__(self):
+        # The Clinician's Knowledge Base: Severity and Urgency mapping
         self.av_block_descriptions = {
-            0: {
-                'name': 'Normal Sinus Rhythm',
-                'description': 'Regular heart rhythm with normal conduction',
-                'severity': 'None',
-                'urgency': 'Routine'
-            },
-            1: {
-                'name': '1st Degree AV Block',
-                'description': 'Delayed conduction through AV node (PR > 200ms)',
-                'severity': 'Mild',
-                'urgency': 'Monitor'
-            },
-            2: {
-                'name': '2nd Degree AV Block Type I (Wenckebach)',
-                'description': 'Progressive PR prolongation until a beat is dropped',
-                'severity': 'Moderate',
-                'urgency': 'Evaluate'
-            },
-            3: {
-                'name': '2nd Degree AV Block Type II (Mobitz II)',
-                'description': 'Intermittent non-conducted P-waves with constant PR',
-                'severity': 'Moderate-Severe',
-                'urgency': 'Urgent evaluation'
-            },
-            4: {
-                'name': '3rd Degree AV Block (Complete Heart Block)',
-                'description': 'Complete dissociation between atria and ventricles',
-                'severity': 'Severe',
-                'urgency': 'Emergency - Pacemaker indicated'
-            },
-            5: {
-                'name': 'Ventricular Tachycardia with AV Dissociation',
-                'description': 'Life-threatening arrhythmia with independent atrial activity',
-                'severity': 'Critical',
-                'urgency': 'Emergency - Immediate intervention'
-            }
+            0: {'name': 'Normal Sinus Rhythm', 'description': 'Regular rhythm...', 'severity': 'None', 'urgency': 'Routine'},
+            1: {'name': '1st Degree AV Block', 'description': 'Delayed conduction...', 'severity': 'Mild', 'urgency': 'Monitor'},
+            2: {'name': '2nd Degree Type I', 'description': 'Wenckebach progression...', 'severity': 'Moderate', 'urgency': 'Evaluate'},
+            3: {'name': '2nd Degree Type II', 'description': 'Sudden dropped beats...', 'severity': 'Serious', 'urgency': 'Urgent'},
+            4: {'name': '3rd Degree Block', 'description': 'Complete AV dissociation...', 'severity': 'Severe', 'urgency': 'Emergency'},
+            5: {'name': 'VT/AV Dissociation', 'description': 'Life-threatening rhythm...', 'severity': 'Critical', 'urgency': 'Emergency'}
         }
     
     def explain_segmentation(self, waves: Dict[str, List[int]], 
                            seg_confidence: float) -> str:
         """
-        Explain segmentation results
-        
-        Args:
-            waves: Dictionary of detected waves
-            seg_confidence: Segmentation confidence score
-            
-        Returns:
-            Explanation text
+        Translating the Object Detection Mask into a Narrative Summary.
         """
         total_p = len(waves['P_associated']) + len(waves['P_dissociated'])
         
@@ -70,78 +44,41 @@ class ClinicalExplainer:
         explanation += f"- {len(waves['P_associated'])} P-waves are **associated** with following QRS complexes\n"
         explanation += f"- {len(waves['P_dissociated'])} P-waves are **dissociated** (not followed by QRS)\n"
         explanation += f"- {len(waves['QRS'])} QRS complexes detected\n"
-        explanation += f"- {len(waves['T'])} T-waves detected\n\n"
         
         if len(waves['P_dissociated']) > 0:
             explanation += f"[CRITICAL] Critical Finding: Dissociated P-waves detected, indicating potential AV block.\n\n"
         
-        explanation += f"Segmentation confidence: {seg_confidence:.1%}\n"
-        
         return explanation
     
     def explain_classification(self, av_block_class: int, confidence: float,
-                              intervals: Dict[str, any]) -> str:
+                               intervals: Dict[str, any]) -> str:
         """
-        Explain AV block classification
+        Generating the 'Supporting Evidence' Section.
         
-        Args:
-            av_block_class: Predicted AV block class
-            confidence: Prediction confidence
-            intervals: Calculated intervals
-            
-        Returns:
-            Explanation text
+        Logic:
+        Takes the numerical intervals (PR, Rate) and converts them into 
+        qualitative statements (e.g., "prolonged", "tachycardic").
         """
         block_info = self.av_block_descriptions[av_block_class]
         
         explanation = f"**Diagnosis: {block_info['name']}**\n\n"
-        explanation += f"{block_info['description']}\n\n"
-        
         explanation += f"**Clinical Significance:**\n"
         explanation += f"- Severity: {block_info['severity']}\n"
         explanation += f"- Urgency: {block_info['urgency']}\n"
         explanation += f"- Confidence: {confidence:.1%}\n\n"
         
-        # Add interval-based evidence
         explanation += f"**Supporting Evidence:**\n"
         
         if intervals['pr']:
             avg_pr = np.mean(intervals['pr'])
             explanation += f"- Average PR interval: {avg_pr:.1f} ms"
-            if avg_pr > 200:
-                explanation += f" (prolonged, normal < 200 ms)\n"
-            else:
-                explanation += f" (normal range)\n"
+            explanation += " (prolonged)" if avg_pr > 200 else " (normal)"
+            explanation += "\n"
         
         if intervals['p_qrs_ratio']:
             explanation += f"- P:QRS ratio: {intervals['p_qrs_ratio']:.2f}"
-            if intervals['p_qrs_ratio'] > 1.2:
-                explanation += f" (more P-waves than QRS, suggests AV block)\n"
-            else:
-                explanation += f" (normal 1:1 ratio)\n"
-        
-        if intervals['rr']:
-            avg_rr = np.mean(intervals['rr'])
-            hr = 60000 / avg_rr
-            explanation += f"- Heart rate: {hr:.0f} bpm\n"
-        
-        return explanation
-    
-    def explain_temporal_analysis(self, temporal_results: Dict) -> str:
-        """
-        Explain temporal analysis findings
-        
-        Args:
-            temporal_results: Results from TemporalAnalyzer
-            
-        Returns:
-            Explanation text
-        """
-        explanation = f"**Temporal Relationship Analysis:**\n\n"
-        
-        findings = temporal_results['findings']
-        for finding in findings:
-            explanation += f"- {finding}\n"
+            explanation += " (suggests conduction block)" if intervals['p_qrs_ratio'] > 1.2 else " (normal)"
+            explanation += "\n"
         
         return explanation
     

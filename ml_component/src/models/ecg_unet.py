@@ -1,5 +1,14 @@
 """
-ECG U-Net with Attention for 5-class segmentation and AV block classification
+AtrionNet Model Architecture: Multi-Task Attention U-Net
+This module defines the primary neural network architecture used for ECG analysis.
+
+Key Concepts:
+1.  **1D Instance Segmentation**: Unlike semantic segmentation, we need to distinguish 
+    individual waves (instances) accurately.
+2.  **Multi-Task Learning (MTL)**: Simultaneously performing segmentation (local) 
+    and classification (global) to leverage shared features.
+3.  **Attention Fusion**: Using spatial and channel attention to suppress noise 
+    and highlight relevant diagnostic segments.
 """
 
 import torch
@@ -8,15 +17,25 @@ from .attention import AttentionGate, ChannelAttention
 
 
 class ConvBlock(nn.Module):
-    """Convolutional block with BatchNorm and ReLU"""
+    """
+    Standard Convolutional Block for 1D Signal Processing.
+    
+    Why this matters:
+    The 1D Convolution (`nn.Conv1d`) learns to identify temporal patterns like 
+    sharp peaks (QRS) or slow waves (T). BatchNorm stabilizes training by 
+    normalizing layer activations, and ReLU adds the non-linearity needed to 
+    learn complex mappings.
+    """
     
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int = 7):
         super(ConvBlock, self).__init__()
         
         self.conv = nn.Sequential(
+            # First conv captures local morphology (e.g., slopes)
             nn.Conv1d(in_channels, out_channels, kernel_size, padding=kernel_size//2),
             nn.BatchNorm1d(out_channels),
             nn.ReLU(inplace=True),
+            # Second conv refines these features into higher-level wave descriptors
             nn.Conv1d(out_channels, out_channels, kernel_size, padding=kernel_size//2),
             nn.BatchNorm1d(out_channels),
             nn.ReLU(inplace=True)
@@ -27,49 +46,70 @@ class ConvBlock(nn.Module):
 
 
 class EncoderBlock(nn.Module):
-    """Encoder block with convolution and downsampling"""
+    """
+    Encoder (Downsampling) Stage of the U-Net.
+    
+    Logic:
+    1.  Convolutions extract features.
+    2.  `ChannelAttention` focuses on the most 'important' filters (e.g., those detecting P-waves).
+    3.  `MaxPool1d` reduces resolution by 2x, allowing the model to 'see' a wider 
+        temporal context (temporal receptive field) in the next layer.
+    """
     
     def __init__(self, in_channels: int, out_channels: int):
         super(EncoderBlock, self).__init__()
         
         self.conv = ConvBlock(in_channels, out_channels)
         self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
+        # Squeeze-and-Excitation style attention for channel priority
         self.channel_att = ChannelAttention(out_channels)
     
     def forward(self, x):
         skip = self.conv(x)
         skip = self.channel_att(skip)
         x = self.pool(skip)
+        # We return 'skip' to be fused with the decoder later
         return x, skip
 
 
 class DecoderBlock(nn.Module):
-    """Decoder block with upsampling and skip connection"""
+    """
+    Decoder (Upsampling) Stage with Spatial Attention Fusion.
+    
+    Logic:
+    This block reconstructs the signal resolution. Crucially, it uses an 
+    `AttentionGate` to decide which parts of the 'skip connection' are 
+    actually relevant to the current upsampling step, effectively 
+    filtering out background noise.
+    """
     
     def __init__(self, in_channels: int, out_channels: int, use_attention: bool = True):
         super(DecoderBlock, self).__init__()
         
+        # Upsample temporally
         self.upsample = nn.ConvTranspose1d(in_channels, out_channels, kernel_size=2, stride=2)
         
         if use_attention:
+            # Spatial Attention: Highlight wave regions based on gated context
             self.attention = AttentionGate(F_g=out_channels, F_l=out_channels, F_int=out_channels//2)
         else:
             self.attention = None
         
+        # Merge upsampled features + skip features
         self.conv = ConvBlock(out_channels * 2, out_channels)
     
     def forward(self, x, skip):
         x = self.upsample(x)
         
-        # Match dimensions
+        # Defensive programming: ensure dimensions match after upsampling
         if x.shape[2] != skip.shape[2]:
             x = nn.functional.interpolate(x, size=skip.shape[2], mode='linear', align_corners=False)
         
-        # Apply attention to skip connection
+        # Gated Skip Connection: Combine low-level spatial data with high-level diagnostic data
         if self.attention is not None:
             skip = self.attention(x, skip)
         
-        # Concatenate
+        # Concatenate along channel dimension to fuse information
         x = torch.cat([x, skip], dim=1)
         x = self.conv(x)
         
@@ -78,11 +118,12 @@ class DecoderBlock(nn.Module):
 
 class ECGUNet(nn.Module):
     """
-    1D U-Net with Attention for ECG Analysis
+    AtrionNet Master Architecture: 1D Attention-Fused U-Net.
     
-    Multi-task architecture:
-    - Segmentation: 5-class pixel-wise classification
-    - Classification: 6-class AV block detection
+    The model architecture is split into three main logical parts:
+    1.  **Shared Encoder**: Learns universal features of ECG morphology.
+    2.  **Segmentation Branch**: Pixel-wise wave boundary detector (Local Task).
+    3.  **Classification Branch**: Global rhythm diagnosis (Global Task).
     """
     
     def __init__(
@@ -93,27 +134,21 @@ class ECGUNet(nn.Module):
         base_channels: int = 64,
         use_attention: bool = True
     ):
-        """
-        Args:
-            in_channels: Number of input channels (1 for single-lead ECG)
-            num_seg_classes: Number of segmentation classes (5)
-            num_clf_classes: Number of classification classes (6 AV block types)
-            base_channels: Base number of channels
-            use_attention: Whether to use attention mechanisms
-        """
         super(ECGUNet, self).__init__()
         
         self.in_channels = in_channels
         self.num_seg_classes = num_seg_classes
         self.num_clf_classes = num_clf_classes
         
-        # Encoder
+        # 1. Encoder Stack: Extracts hierarchical features (low-level to high-level)
         self.enc1 = EncoderBlock(in_channels, base_channels)
         self.enc2 = EncoderBlock(base_channels, base_channels * 2)
         self.enc3 = EncoderBlock(base_channels * 2, base_channels * 4)
         self.enc4 = EncoderBlock(base_channels * 4, base_channels * 8)
         
-        # Bottleneck with dilated convolutions
+        # 2. Bottleneck: The model's "Compressed Knowledge" center
+        # We use Dilated Convolutions here to expand the receptive field 
+        # (allowing the model to 'see' multiple heartbeats) without losing resolution.
         self.bottleneck = nn.Sequential(
             nn.Conv1d(base_channels * 8, base_channels * 16, kernel_size=3, padding=2, dilation=2),
             nn.BatchNorm1d(base_channels * 16),
@@ -124,21 +159,21 @@ class ECGUNet(nn.Module):
             nn.Dropout(0.3)
         )
         
-        # Decoder
+        # 3. Decoder Stack: Reconstructs waves from abstract features
         self.dec4 = DecoderBlock(base_channels * 16, base_channels * 8, use_attention)
         self.dec3 = DecoderBlock(base_channels * 8, base_channels * 4, use_attention)
         self.dec2 = DecoderBlock(base_channels * 4, base_channels * 2, use_attention)
         self.dec1 = DecoderBlock(base_channels * 2, base_channels, use_attention)
         
-        # Segmentation head
+        # 4. Final Segmentation Head: Maps features to 5 wave classes
         self.seg_head = nn.Conv1d(base_channels, num_seg_classes, kernel_size=1)
         
-        # Classification head
+        # 5. Classification Head: Fuses global temporal data into a diagnosis
         self.global_pool = nn.AdaptiveAvgPool1d(1)
         self.clf_head = nn.Sequential(
             nn.Linear(base_channels * 16, 512),
             nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
+            nn.Dropout(0.5), # Prevents overfitting by randomly silencing neurons
             nn.Linear(512, 256),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
@@ -147,35 +182,31 @@ class ECGUNet(nn.Module):
     
     def forward(self, x):
         """
-        Forward pass
-        
-        Args:
-            x: Input ECG signal (batch, 1, seq_len)
-            
-        Returns:
-            seg_out: Segmentation output (batch, num_seg_classes, seq_len)
-            clf_out: Classification output (batch, num_clf_classes)
+        Input: Batch of ECGs [B, 1, 5000]
+        Execution: Encoder -> Bottleneck -> (Split) -> Classification Header & Decoder Header
         """
-        # Encoder
+        # Feature Extraction Stage
         x, skip1 = self.enc1(x)
         x, skip2 = self.enc2(x)
         x, skip3 = self.enc3(x)
         x, skip4 = self.enc4(x)
         
-        # Bottleneck
+        # Abstract Knowledge Stage
         bottleneck_features = self.bottleneck(x)
         
-        # Classification branch (from bottleneck)
+        # TASK 1: Global Classification (Diagnosis)
+        # Pull global features from the bottleneck
         clf_features = self.global_pool(bottleneck_features).squeeze(-1)
         clf_out = self.clf_head(clf_features)
         
-        # Decoder
+        # TASK 2: Local Segmentation (Wave Maps)
+        # Reconstruct spatial maps using skip connections
         x = self.dec4(bottleneck_features, skip4)
         x = self.dec3(x, skip3)
         x = self.dec2(x, skip2)
         x = self.dec1(x, skip1)
         
-        # Segmentation output
+        # Map back to 5-class wave probabilities
         seg_out = self.seg_head(x)
         
         return seg_out, clf_out
