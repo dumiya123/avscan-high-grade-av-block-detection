@@ -12,8 +12,10 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ECGAnalysisResult | null>(null);
   const [backendStatus, setBackendStatus] = useState<boolean>(false);
+  const [showSegmentation, setShowSegmentation] = useState<boolean>(true);
 
   useEffect(() => {
+    // ... existing useEffect ...
     checkHealth().then(setBackendStatus);
     const interval = setInterval(() => {
       checkHealth().then(setBackendStatus);
@@ -45,11 +47,15 @@ const App: React.FC = () => {
     <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-16 px-6 lg:px-24">
       <div className="flex-1 max-w-2xl space-y-8 animate-in fade-in slide-in-from-left-8 duration-700">
         <h2 className="text-4xl lg:text-5xl font-black text-slate-800 leading-tight">
-          Reveal insights with deep learning.
+          AtrionNet Clinical Dashboard
         </h2>
-        <h3 className="text-3xl lg:text-4xl font-black text-slate-900 leading-[1.2]">
-          AtrionNet: A Novel Explainable AI-Focused Approach for Dissociated P-Wave Detection in ECG Signals to Support Diagnosis of High-Grade Atrioventricular Block.
+        <h3 className="text-2xl lg:text-3xl font-bold text-blue-600 leading-[1.2]">
+          Deep Learning for High-Grade AV Block Detection
         </h3>
+        <p className="text-lg text-slate-600 leading-relaxed max-w-xl">
+          An explainable AI-focused platform specialized in precision <strong>Dissociated P-Wave Detection</strong>.
+          AtrionNet provides clinicians with transparent, evidence-based insights into complex cardiac conduction disorders.
+        </p>
         <div className="space-y-4 pt-8">
           <p className="text-slate-500 font-bold">Ready to start?</p>
           <button
@@ -77,8 +83,8 @@ const App: React.FC = () => {
   const renderInstructions = () => (
     <div className="flex-1 container mx-auto p-12 max-w-4xl animate-in fade-in slide-in-from-bottom-8 duration-700">
       <div className="text-center mb-16">
-        <h2 className="text-3xl font-black text-slate-800 mb-4">How to use AVSegNet</h2>
-        <p className="text-slate-500 font-medium">Follow these simple steps to analyze ECG signals with our Explainable AI system.</p>
+        <h2 className="text-3xl font-black text-slate-800 mb-4">Clinical Workflow Guide</h2>
+        <p className="text-slate-500 font-medium">Follow this protocol to analyze ECG signals and generate AI-supported clinical findings.</p>
       </div>
 
       <div className="grid gap-8">
@@ -225,10 +231,10 @@ const App: React.FC = () => {
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
                     <p className="text-[9px] text-slate-400 uppercase font-bold tracking-widest mb-1">Severity</p>
                     <span className={`text-[10px] font-black uppercase inline-block px-1.5 py-0.5 rounded ${(result.severity || '').toLowerCase() === 'critical' ? 'bg-red-600 text-white' :
-                        (result.severity || '').toLowerCase() === 'severe' ? 'bg-red-500 text-white' :
-                          (result.severity || '').toLowerCase().includes('moderate') ? 'bg-orange-500 text-white' :
-                            (result.severity || '').toLowerCase() === 'mild' ? 'bg-yellow-500 text-white' :
-                              'bg-green-500 text-white'
+                      (result.severity || '').toLowerCase() === 'severe' ? 'bg-red-500 text-white' :
+                        (result.severity || '').toLowerCase().includes('moderate') ? 'bg-orange-500 text-white' :
+                          (result.severity || '').toLowerCase() === 'mild' ? 'bg-yellow-500 text-white' :
+                            'bg-green-500 text-white'
                       }`}>
                       {result.severity || 'Normal'}
                     </span>
@@ -266,14 +272,48 @@ const App: React.FC = () => {
                   <h3 className="text-sm font-bold text-slate-600 flex items-center gap-2 uppercase tracking-widest">
                     Interactive Signal Trace
                   </h3>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Segmentation</span>
+                    <button
+                      onClick={() => setShowSegmentation(!showSegmentation)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showSegmentation ? 'bg-blue-600' : 'bg-slate-200'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showSegmentation ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
                 </div>
                 <div className="h-[350px] w-full bg-white p-4">
                   <ECGViewer
                     signal={result.signal}
                     fs={500}
                     height={300}
+                    waves={result.waves}
+                    showSegmentation={showSegmentation}
                   />
                 </div>
+                {showSegmentation && (
+                  <div className="px-6 py-4 bg-slate-50 border-t flex flex-wrap gap-6 items-center">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-blue-500/20 rounded border border-blue-500/40"></div>
+                      <span className="text-[11px] font-bold text-slate-600">P (Associated)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-red-500/30 rounded border border-red-500/50"></div>
+                      <span className="text-[11px] font-bold text-slate-600">P (Dissociated)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-emerald-500/20 rounded border border-emerald-500/40"></div>
+                      <span className="text-[11px] font-bold text-slate-600">QRS Complex</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-orange-500/20 rounded border border-orange-500/40"></div>
+                      <span className="text-[11px] font-bold text-slate-600">T-wave</span>
+                    </div>
+                    <div className="ml-auto text-[10px] italic text-slate-400 font-medium">
+                      * Clinical segmentation based on temporal relationship
+                    </div>
+                  </div>
+                )}
               </section>
 
               <section className="glass rounded-3xl overflow-hidden shadow-2xl">
