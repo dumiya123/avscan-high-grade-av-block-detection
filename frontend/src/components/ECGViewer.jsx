@@ -1,26 +1,13 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
 
-interface ECGViewerProps {
-    signal: number[];
-    fs: number;
-    height?: number | string;
-    waves?: {
-        p_associated: [number, number][];
-        p_dissociated: [number, number][];
-        qrs: [number, number][];
-        t: [number, number][];
-    };
-    showSegmentation?: boolean;
-}
-
-const ECGViewer: React.FC<ECGViewerProps> = ({ signal, fs, height = 300, waves, showSegmentation = true }) => {
+const ECGViewer = ({ signal, fs, height = 300, waves, showSegmentation = true }) => {
     // Generate time axis
     // If signal length is 1000, we assume it's subsampled from a 10s recording (effective fs = 100)
     const effectiveFs = signal.length === 1000 ? 100 : fs;
     const time = signal.map((_, i) => i / effectiveFs);
 
-    const shapes: any[] = showSegmentation && waves ? [] : [];
+    const shapes = showSegmentation && waves ? [] : [];
 
     if (showSegmentation && waves) {
         const categories = [

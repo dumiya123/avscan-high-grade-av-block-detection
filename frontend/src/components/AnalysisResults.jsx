@@ -1,12 +1,7 @@
 import React from 'react';
 import { Clock, Activity, Hash, Layers } from 'lucide-react';
-import type { ECGAnalysisResult } from '../types';
 
-interface AnalysisResultsProps {
-    result: ECGAnalysisResult;
-}
-
-const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result }) => {
+const AnalysisResults = ({ result }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="glass p-4 rounded-xl flex items-center gap-4">
@@ -41,7 +36,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result }) => {
 
             <div className="glass p-4 rounded-xl flex items-center gap-4">
                 <div className="bg-medical-100 p-3 rounded-lg">
-                    <Layers className="text-medical-600 w-6 h-6" />
+                    <Hash className="text-medical-600 w-6 h-6" />
                 </div>
                 <div>
                     <p className="text-xs text-slate-500 font-bold uppercase">Detections</p>

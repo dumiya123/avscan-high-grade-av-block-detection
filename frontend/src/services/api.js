@@ -1,5 +1,4 @@
 import axios from 'axios';
-import type { ECGAnalysisResult } from '../types';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -7,11 +6,11 @@ const api = axios.create({
     baseURL: API_BASE_URL,
 });
 
-export const analyzeECG = async (file: File): Promise<ECGAnalysisResult> => {
+export const analyzeECG = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await api.post<ECGAnalysisResult>('/analyze', formData, {
+    const response = await api.post('/analyze', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },
@@ -20,11 +19,11 @@ export const analyzeECG = async (file: File): Promise<ECGAnalysisResult> => {
     return response.data;
 };
 
-export const getReportUrl = (report_id: string): string => {
+export const getReportUrl = (report_id) => {
     return `${API_BASE_URL}/report/${report_id}`;
 };
 
-export const checkHealth = async (): Promise<boolean> => {
+export const checkHealth = async () => {
     try {
         const response = await api.get('/health');
         return response.data.status === 'online';
