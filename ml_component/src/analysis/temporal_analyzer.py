@@ -19,15 +19,15 @@ class TemporalAnalyzer:
         """
         self.fs = fs
     
-    def extract_waves(self, seg_mask: np.ndarray) -> Dict[str, List[int]]:
+    def extract_waves(self, seg_mask: np.ndarray) -> Dict[str, List[Tuple[int, int]]]:
         """
-        Extract wave locations from segmentation mask
+        Extract wave intervals from segmentation mask
         
         Args:
             seg_mask: Segmentation mask (seq_len,) with classes 0-4
             
         Returns:
-            Dictionary with wave types and their center indices
+            Dictionary with wave types and their (start, end) intervals
         """
         waves = {
             'P_associated': [],
@@ -52,19 +52,18 @@ class TemporalAnalyzer:
             starts = np.where(diff == 1)[0]
             ends = np.where(diff == -1)[0]
             
-            # Get center of each region
+            # Store intervals
             for start, end in zip(starts, ends):
-                center = (start + end) // 2
-                waves[wave_type].append(center)
+                waves[wave_type].append((int(start), int(end)))
         
         return waves
     
-    def calculate_intervals(self, waves: Dict[str, List[int]]) -> Dict[str, any]:
+    def calculate_intervals(self, waves: Dict[str, List[Tuple[int, int]]]) -> Dict[str, any]:
         """
         Calculate PR, RR, and QT intervals
         
         Args:
-            waves: Dictionary of wave locations
+            waves: Dictionary of wave intervals
             
         Returns:
             Dictionary with interval measurements
@@ -76,10 +75,11 @@ class TemporalAnalyzer:
             'p_qrs_ratio': 0.0
         }
         
-        p_associated = waves['P_associated']
-        p_dissociated = waves['P_dissociated']
-        qrs = waves['QRS']
-        t_waves = waves['T']
+        # Use centers for interval calculations
+        p_associated = [(s + e) // 2 for s, e in waves['P_associated']]
+        p_dissociated = [(s + e) // 2 for s, e in waves['P_dissociated']]
+        qrs = [(s + e) // 2 for s, e in waves['QRS']]
+        t_waves = [(s + e) // 2 for s, e in waves['T']]
         
         # PR intervals (P-associated to next QRS)
         for p_idx in p_associated:
@@ -111,13 +111,13 @@ class TemporalAnalyzer:
         
         return intervals
     
-    def detect_av_block_type(self, waves: Dict[str, List[int]], 
+    def detect_av_block_type(self, waves: Dict[str, List[Tuple[int, int]]], 
                             intervals: Dict[str, any]) -> Tuple[int, str, float]:
         """
         Detect AV block type based on wave patterns and intervals
         
         Args:
-            waves: Dictionary of wave locations
+            waves: Dictionary of wave intervals
             intervals: Dictionary of interval measurements
             
         Returns:
@@ -201,14 +201,14 @@ class TemporalAnalyzer:
         # At least 60% should be increasing
         return (increasing_count / (len(pr_intervals) - 1)) > 0.6
     
-    def generate_findings(self, waves: Dict[str, List[int]], 
+    def generate_findings(self, waves: Dict[str, List[Tuple[int, int]]], 
                          intervals: Dict[str, any],
                          av_block_type: Tuple[int, str, float]) -> List[str]:
         """
         Generate clinical findings as text
         
         Args:
-            waves: Dictionary of wave locations
+            waves: Dictionary of wave intervals
             intervals: Dictionary of intervals
             av_block_type: Detected AV block type
             

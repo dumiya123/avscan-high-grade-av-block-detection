@@ -84,10 +84,31 @@ async def analyze_ecg(file: UploadFile = File(...)):
         
         # Prepare response (convert numpy arrays to lists for JSON)
         # Subsample signal to 1000 points for smooth frontend plotting if long
-        viz_signal = signal.flatten()
-        if len(viz_signal) > 1000:
-            indices = np.linspace(0, len(viz_signal) - 1, 1000).astype(int)
-            viz_signal = viz_signal[indices]
+        orig_signal = signal.flatten()
+        orig_len = len(orig_signal)
+        viz_signal = orig_signal
+        scale_factor = 1.0
+        
+        if orig_len > 1000:
+            indices = np.linspace(0, orig_len - 1, 1000).astype(int)
+            viz_signal = orig_signal[indices]
+            scale_factor = 1000.0 / orig_len
+
+        # Scale wave boundaries and map to lowercase keys
+        key_map = {
+            'P_associated': 'p_associated',
+            'P_dissociated': 'p_dissociated',
+            'QRS': 'qrs',
+            'T': 't'
+        }
+        
+        scaled_waves = {}
+        for ml_key, intervals in result['waves'].items():
+            fe_key = key_map.get(ml_key, ml_key.lower())
+            scaled_waves[fe_key] = [
+                (int(start * scale_factor), int(end * scale_factor)) 
+                for start, end in intervals
+            ]
 
         response_data = {
             "diagnosis": result['diagnosis']['av_block_type'],
@@ -100,7 +121,8 @@ async def analyze_ecg(file: UploadFile = File(...)):
             },
             "report_id": report_id,
             "explanation": result['xai']['explanation'],
-            "signal": viz_signal.tolist()
+            "signal": viz_signal.tolist(),
+            "waves": scaled_waves
         }
         
         return response_data
