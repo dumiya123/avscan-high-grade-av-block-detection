@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     ports:
-      - "8000:8000"
+      - "7860:7860"
     volumes:
       - ./backend/uploads:/app/backend/uploads
       - ./backend/reports:/app/backend/reports
@@ -20,6 +20,6 @@ services:
     ports:
       - "80:80"
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://localhost:7860
     depends_on:
       - backend

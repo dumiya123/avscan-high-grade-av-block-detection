@@ -28,9 +28,8 @@ COPY ml_component/ ./ml_component/
 # Create directories for uploads and reports
 RUN mkdir -p backend/uploads backend/reports
 
-# Expose the port the app runs on
-EXPOSE 8000
+# Expose the port the app runs on (Hugging Face uses 7860)
+EXPOSE 7860
 
 # Command to run the application
-# We use uvicorn with gunicorn for production
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "backend.main:app"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:7860", "backend.main:app"]
