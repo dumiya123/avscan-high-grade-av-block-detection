@@ -1,13 +1,24 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
+import { cn } from "../../utils/cn";
 
-const ECGViewer = ({ signal, fs, height = 300, waves, showSegmentation = true }) => {
-    // Generate time axis
-    // If signal length is 1000, we assume it's subsampled from a 10s recording (effective fs = 100)
+/**
+ * Clinical-grade ECG signal visualization component.
+ * Features standard ECG paper grid and wave segmentation overlays.
+ */
+const ECGViewer = ({
+    signal,
+    fs,
+    height = 300,
+    waves,
+    showSegmentation = true,
+    className
+}) => {
+    // Determine effective frequency (handles subsampled UI signals)
     const effectiveFs = signal.length === 1000 ? 100 : fs;
     const time = signal.map((_, i) => i / effectiveFs);
 
-    const shapes = showSegmentation && waves ? [] : [];
+    const shapes = [];
 
     if (showSegmentation && waves) {
         const categories = [
@@ -42,7 +53,7 @@ const ECGViewer = ({ signal, fs, height = 300, waves, showSegmentation = true })
     }
 
     return (
-        <div className="w-full h-full">
+        <div className={cn("w-full h-full bg-white", className)}>
             <Plot
                 data={[
                     {
@@ -63,28 +74,26 @@ const ECGViewer = ({ signal, fs, height = 300, waves, showSegmentation = true })
                     height: typeof height === 'number' ? height : undefined,
                     margin: { l: 50, r: 20, t: 30, b: 50 },
                     paper_bgcolor: 'white',
-                    plot_bgcolor: '#fff5f5', // Light pink background like ECG paper
+                    plot_bgcolor: '#fff5f5', // Authentic ECG paper pink
                     xaxis: {
                         title: 'Time (seconds)',
                         range: [0, Math.min(2, time[time.length - 1])],
-                        // Standard ECG Paper: 25mm/s implies 0.04s per 1mm square
-                        dtick: 0.2, // Large squares (5mm) = 0.2s
-                        gridcolor: '#feb2b2', // Rose color for large squares
+                        dtick: 0.2, // Large squares (0.2s)
+                        gridcolor: '#feb2b2',
                         gridwidth: 1.5,
                         showgrid: true,
                         zeroline: false,
                         minor: {
-                            dtick: 0.04, // Small squares (1mm) = 0.04s
+                            dtick: 0.04, // Small squares (0.04s)
                             showgrid: true,
-                            gridcolor: '#fed7d7', // Lighter pink for small squares
+                            gridcolor: '#fed7d7',
                             gridwidth: 0.5,
                         }
                     },
                     yaxis: {
                         title: 'Amplitude (mV)',
                         range: [-2, 2],
-                        // Standard ECG Paper: 10mm/mV implies 0.1mV per 1mm square
-                        dtick: 0.5, // Large squares (5mm) = 0.5mV
+                        dtick: 0.5, // Large squares (0.5mV)
                         gridcolor: '#feb2b2',
                         gridwidth: 1.5,
                         showgrid: true,
@@ -92,7 +101,7 @@ const ECGViewer = ({ signal, fs, height = 300, waves, showSegmentation = true })
                         zerolinecolor: '#feb2b2',
                         zerolinewidth: 2,
                         minor: {
-                            dtick: 0.1, // Small squares (1mm) = 0.1mV
+                            dtick: 0.1, // Small squares (0.1mV)
                             showgrid: true,
                             gridcolor: '#fed7d7',
                             gridwidth: 0.5,
@@ -105,7 +114,7 @@ const ECGViewer = ({ signal, fs, height = 300, waves, showSegmentation = true })
                 }}
                 config={{
                     responsive: true,
-                    displayModeBar: true, // Show mode bar for better navigation
+                    displayModeBar: true,
                     scrollZoom: true,
                 }}
                 className="w-full h-full"
