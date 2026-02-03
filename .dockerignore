@@ -1,0 +1,25 @@
+# Folders to EXCLUDE from Docker/Hugging Face
+.venv/
+env/
+venv/
+ml_component/data/        # This is the 6GB+ data folder
+**/__pycache__/
+*.pyc
+
+# ML Assets
+ml_component/checkpoints/*
+!ml_component/checkpoints/best_model.pth  # KEEP ONLY THE BEST MODEL
+
+# Frontend Assets (Handled by stage 1 in Dockerfile, but ignore redundant stuff)
+frontend/node_modules/
+frontend/dist/
+
+# System & IDE
+.git/
+.vscode/
+.idea/
+.DS_Store
+
+# Temporary outputs
+backend/uploads/*
+backend/reports/*
