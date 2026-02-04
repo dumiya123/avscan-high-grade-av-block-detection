@@ -1,0 +1,687 @@
+================================================================================
+                    LOGIC TIER DATA FLOW ARROWS GUIDE
+          Drawing Arrows to Show Data Flowing Like a Beautiful River
+================================================================================
+
+This guide shows you EXACTLY how to draw arrows in draw.io so that anyone 
+looking at your diagram can see the data flowing smoothly like a river from 
+start to finish.
+
+
+================================================================================
+                              PREPARATION
+================================================================================
+
+ARROW TYPES YOU WILL USE:
+
+Type 1: MAIN RIVER (High-Level Flow Between Modules)
+   - Color: Black
+   - Width: 3 points
+   - Style: Solid line with filled arrow head
+   - These show the main data flow path
+
+Type 2: TRIBUTARIES (Internal Flow Within Modules)
+   - Color: Dark Gray (#666666)
+   - Width: 2 points
+   - Style: Solid line with filled arrow head
+   - These show how data flows inside each module
+
+Type 3: SUPPORT STREAMS (State Management)
+   - Color: Light Gray (#999999)
+   - Width: 2 points
+   - Style: DASHED line with filled arrow head
+   - These show helper connections
+
+
+================================================================================
+                    PART 1: THE MAIN RIVER (17 ARROWS)
+              Draw These in Order to See the Beautiful Flow
+================================================================================
+
+Think of this as water flowing from a mountain (user upload) down to the 
+ocean (final response). Each arrow is part of the river's journey.
+
+
+STEP 1: THE ENTRANCE (Data Enters the System)
+------------------------------------------------------------------------------
+
+Arrow #1: The Beginning of the Journey
+   FROM: Proxy Server (in API Gateway module - top left)
+   TO: File Upload Handler (in Request Processing Pipeline - top right)
+   LABEL: "HTTP POST Request"
+   
+   This is where the ECG file enters your system, like water entering a river.
+
+
+STEP 2: VALIDATION STREAM (Checking the Data)
+------------------------------------------------------------------------------
+
+Arrow #2: Moving to Storage
+   FROM: Temp Storage Manager (in Request Processing - rightmost box)
+   TO: ECG Signal Loader (in Signal Processing Module - left side)
+   LABEL: "File Path"
+   
+   The validated file is now ready to be processed.
+
+
+STEP 3: CLEANING STREAM (Preparing the Data)
+------------------------------------------------------------------------------
+
+Arrow #3: Clean Data to AI Brain
+   FROM: Signal Sampler (in Signal Processing - rightmost box)
+   TO: AV Block Predictor (in ML Inference Engine - middle box)
+   LABEL: "Clean ECG Data"
+   
+   The cleaned signal flows into the AI brain for analysis.
+
+
+STEP 4: THE AI ANALYSIS (Main Processing)
+------------------------------------------------------------------------------
+
+Arrow #4: Sending Features to Explainer
+   FROM: U-NET Segmentation (in Neural Network Pipeline - inside ML Inference)
+   TO: GRAD-CAM Generator (in Explainable AI Module - left side)
+   LABEL: "Feature Maps"
+   
+   The AI shares what it found with the explanation generator.
+
+Arrow #5: Sending Attention to Explainer
+   FROM: Attention Module (in Neural Network Pipeline)
+   TO: Saliency MAP generator (in Explainable AI Module)
+   LABEL: "Attention Weights"
+   
+   The attention mechanism shares where it focused.
+
+
+STEP 5: DIAGNOSIS STREAM (Making Medical Decision)
+------------------------------------------------------------------------------
+
+Arrow #6: Sending Analysis to Doctor Logic
+   FROM: Dissociation Detector (in Post-Processing - inside ML Inference)
+   TO: Clinical Rule Engine (in Diagnosis Logic - left bottom)
+   LABEL: "Dissociation Ratio + Intervals"
+   
+   The AI analysis flows to the medical rule engine.
+
+
+STEP 6: REPORT GENERATION STREAM (Creating Documentation)
+------------------------------------------------------------------------------
+
+Arrow #7: Diagnosis to Report
+   FROM: Severity Assessor (in Diagnosis Logic - bottom box)
+   TO: Clinical Report Builder (in Report Generation Pipeline - right bottom)
+   LABEL: "Diagnosis Summary"
+   
+   The final diagnosis flows into the report builder.
+
+Arrow #8: Explanation to Report
+   FROM: Clinical Explain Generator (in Explainable AI Module - bottom box)
+   TO: Clinical Report Builder (in Report Generation Pipeline)
+   LABEL: "Explanation Text"
+   
+   The human-readable explanation joins the report.
+
+
+STEP 7: RESPONSE ASSEMBLY STREAM (Packaging Everything)
+------------------------------------------------------------------------------
+
+Arrow #9: Wave Data to Response
+   FROM: Wave Boundary Extractor (in Post-Processing)
+   TO: Wave Interval Scaler (in Response Formatting - bottom left)
+   LABEL: "Wave Positions"
+   
+   The wave positions flow to be scaled for display.
+
+Arrow #10: Diagnosis to Response
+   FROM: Severity Assessor (in Diagnosis Logic)
+   TO: Response Builder (in Response Formatting - bottom box)
+   LABEL: "Final Diagnosis"
+   
+   The diagnosis flows into the response package.
+
+Arrow #11: Explanation to Response
+   FROM: Clinical Explain Generator (in Explainable AI Module)
+   TO: Response Builder (in Response Formatting)
+   LABEL: "Explanation"
+   
+   The explanation flows into the response package.
+
+Arrow #12: Report ID to Response
+   FROM: Clinical Report Builder (in Report Generation)
+   TO: Response Builder (in Response Formatting)
+   LABEL: "Report ID"
+   
+   The report ID flows into the response package.
+
+
+STEP 8: THE EXIT (Data Leaves the System)
+------------------------------------------------------------------------------
+
+Arrow #13: Final Response Back to Gateway
+   FROM: Response Builder (in Response Formatting - bottom box)
+   TO: API Router (in API Gateway - top right box)
+   LABEL: "JSON Response"
+   
+   The complete response flows back to send to the user.
+   This completes the main river flow!
+
+
+STEP 9: SUPPORT STREAMS (Helpers - Draw These as DASHED)
+------------------------------------------------------------------------------
+
+Arrow #14: Model Cache Helper (DASHED, GRAY)
+   FROM: Model Cache (in State Management - bottom right)
+   TO: Model Checkpoint Loader (in ML Inference Engine)
+   LABEL: "Cached Model"
+   STYLE: Dashed line
+   
+   This is a support stream that provides the AI model.
+
+Arrow #15: Session Tracking Helper (DASHED, GRAY)
+   FROM: Session Manager (in State Management - top box)
+   TO: AV Block Predictor (in ML Inference Engine)
+   LABEL: "Request Context"
+   STYLE: Dashed line
+   
+   This tracks the request throughout processing.
+
+Arrow #16: Error Monitoring Helper (DASHED, GRAY)
+   FROM: Error Handler (in State Management - bottom box)
+   TO: API Router (in API Gateway)
+   LABEL: "Error Handling"
+   STYLE: Dashed line
+   
+   This monitors for errors throughout the system.
+
+
+================================================================================
+              PART 2: THE TRIBUTARIES (24 INTERNAL ARROWS)
+           Draw These to Show How Data Flows Inside Each Module
+================================================================================
+
+Now we add the smaller streams that show how data flows INSIDE each module.
+These are like tributaries feeding into the main river.
+
+
+TRIBUTARY SET 1: API GATEWAY MODULE (2 arrows)
+------------------------------------------------------------------------------
+
+Internal Arrow #1:
+   FROM: Proxy Server
+   TO: CORS Middleware
+   LABEL: "Validate Origin"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Security check happens first.
+
+Internal Arrow #2:
+   FROM: CORS Middleware
+   TO: API Router
+   LABEL: "Approved Request"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   After security approval, route the request.
+
+
+TRIBUTARY SET 2: REQUEST PROCESSING PIPELINE (2 arrows)
+------------------------------------------------------------------------------
+
+Internal Arrow #3:
+   FROM: File Upload Handler
+   TO: Input Validator
+   LABEL: "File Stream"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   The uploaded file flows to validation.
+
+Internal Arrow #4:
+   FROM: Input Validator
+   TO: Temp Storage Manager
+   LABEL: "Validated .npy"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Valid files flow to temporary storage.
+
+
+TRIBUTARY SET 3: SIGNAL PROCESSING MODULE (2 arrows)
+------------------------------------------------------------------------------
+
+Internal Arrow #5:
+   FROM: ECG Signal Loader
+   TO: ECG Preprocessor
+   LABEL: "Raw Array"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Raw ECG data flows to preprocessing.
+
+Internal Arrow #6:
+   FROM: ECG Preprocessor
+   TO: Signal Sampler
+   LABEL: "Normalized Signal"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Cleaned signal flows to sampling.
+
+
+TRIBUTARY SET 4: ML INFERENCE ENGINE (7 arrows - The Biggest Module!)
+------------------------------------------------------------------------------
+
+Internal Arrow #7 (DASHED - it's a setup flow):
+   FROM: Model Checkpoint Loader
+   TO: AV Block Predictor
+   LABEL: "Loaded Weights"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   STYLE: Dashed
+   
+   The AI model is loaded and ready.
+
+Internal Arrow #8:
+   FROM: AV Block Predictor
+   TO: U-NET Segmentation (in Neural Network Pipeline sub-group)
+   LABEL: "Batched Input"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Data flows into the neural network.
+
+Internal Arrow #9:
+   FROM: U-NET Segmentation
+   TO: Attention Module
+   LABEL: "Feature Maps"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Features flow to attention mechanism.
+
+Internal Arrow #10:
+   FROM: Attention Module
+   TO: AV Block Classifier
+   LABEL: "Enhanced Features"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Enhanced features flow to classifier.
+
+Internal Arrow #11:
+   FROM: AV Block Classifier
+   TO: Wave Boundary Extractor (in Post-Processing sub-group)
+   LABEL: "Segmentation Masks"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Classification results flow to wave extraction.
+
+Internal Arrow #12:
+   FROM: Wave Boundary Extractor
+   TO: U-NET Segmentation (the one in Post-Processing, not Neural Network!)
+   LABEL: "Wave Intervals"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Wave positions flow to temporal analysis.
+
+Internal Arrow #13:
+   FROM: U-NET Segmentation (in Post-Processing)
+   TO: Dissociation Detector
+   LABEL: "PR/RR Intervals"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Time intervals flow to dissociation detection.
+
+
+TRIBUTARY SET 5: EXPLAINABLE AI MODULE (3 arrows)
+------------------------------------------------------------------------------
+
+Internal Arrow #14:
+   FROM: GRAD-CAM Generator
+   TO: XAI Integrator
+   LABEL: "Heatmap"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Heatmap flows to integration.
+
+Internal Arrow #15:
+   FROM: Saliency MAP generator
+   TO: XAI Integrator
+   LABEL: "Saliency Map"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Saliency map flows to integration.
+
+Internal Arrow #16:
+   FROM: XAI Integrator
+   TO: Clinical Explain Generator
+   LABEL: "Fused XAI Data"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Combined XAI data flows to explanation generator.
+
+
+TRIBUTARY SET 6: DIAGNOSIS LOGIC (2 arrows)
+------------------------------------------------------------------------------
+
+Internal Arrow #17:
+   FROM: Clinical Rule Engine
+   TO: Confidence Calculator
+   LABEL: "AV Block Type"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Diagnosis flows to confidence calculation.
+
+Internal Arrow #18:
+   FROM: Confidence Calculator
+   TO: Severity Assessor
+   LABEL: "Diagnosis + Confidence"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Confident diagnosis flows to severity assessment.
+
+
+TRIBUTARY SET 7: REPORT GENERATION PIPELINE (3 arrows)
+------------------------------------------------------------------------------
+
+Internal Arrow #19:
+   FROM: Clinical Report Builder
+   TO: PDF Generator
+   LABEL: "Aggregated Data"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Report data flows to PDF creation.
+
+Internal Arrow #20:
+   FROM: PDF Generator
+   TO: Report Storage Manager
+   LABEL: "PDF Binary"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   PDF file flows to storage.
+
+Internal Arrow #21 (DASHED - it's a return flow):
+   FROM: Report Storage Manager
+   TO: Clinical Report Builder
+   LABEL: "Report ID"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   STYLE: Dashed
+   
+   Storage returns the report ID.
+
+
+TRIBUTARY SET 8: RESPONSE FORMATTING (3 arrows)
+------------------------------------------------------------------------------
+
+Internal Arrow #22:
+   FROM: Data Serializer
+   TO: Wave Interval Scaler
+   LABEL: "JSON-safe Data"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Serialized data flows to scaling.
+
+Internal Arrow #23:
+   FROM: Wave Interval Scaler
+   TO: Response Builder
+   LABEL: "Scaled Intervals"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Scaled data flows to response assembly.
+
+Internal Arrow #24:
+   FROM: Data Serializer
+   TO: Response Builder
+   LABEL: "Serialized Data"
+   COLOR: Dark Gray
+   WIDTH: 2pt
+   
+   Serialized data flows to response assembly.
+
+
+================================================================================
+                    PART 3: HOW TO DRAW IN DRAW.IO
+================================================================================
+
+DRAWING A MAIN RIVER ARROW (Black, 3pt):
+------------------------------------------------------------------------------
+
+1. Click the "Connector" tool in the toolbar (looks like a line with dots)
+
+2. Click on the SOURCE box (where the arrow starts)
+
+3. Click on the DESTINATION box (where the arrow ends)
+
+4. The arrow appears! Now format it:
+   - Click the arrow to select it
+   - In the right panel, find "Line"
+   - Set Width: 3 pt
+   - Set Color: Black
+   - Set Pattern: Solid (not dashed)
+
+5. Add the arrow head:
+   - Still in right panel, find "End Arrow"
+   - Select "Classic" (filled triangle)
+   - Set Size: 6
+
+6. Add the label:
+   - Double-click the arrow
+   - Type the label text
+   - Press Enter
+   - The label appears on the arrow
+
+
+DRAWING A TRIBUTARY ARROW (Dark Gray, 2pt):
+------------------------------------------------------------------------------
+
+Same steps as above, but:
+   - Set Width: 2 pt (instead of 3)
+   - Set Color: Dark Gray (#666666)
+   - Set End Arrow Size: 5 (instead of 6)
+   - Font size for label: 10pt (slightly smaller)
+
+
+DRAWING A SUPPORT STREAM ARROW (Dashed, Light Gray, 2pt):
+------------------------------------------------------------------------------
+
+Same steps as tributary, but:
+   - Set Color: Light Gray (#999999)
+   - Set Pattern: DASHED (not solid)
+   - This makes it look like a helper connection
+
+
+================================================================================
+                         PART 4: THE BEAUTIFUL FLOW
+                    Drawing Order for Maximum Visual Impact
+================================================================================
+
+To make the data flow look like a beautiful river, draw in this order:
+
+
+PHASE 1: Draw the Main River Course (The Primary Path)
+------------------------------------------------------------------------------
+
+Draw these arrows first so you can see the main flow:
+
+1.  Proxy Server → File Upload Handler
+2.  Temp Storage Manager → ECG Signal Loader
+3.  Signal Sampler → AV Block Predictor
+4.  Dissociation Detector → Clinical Rule Engine
+5.  Severity Assessor → Clinical Report Builder
+6.  Response Builder → API Router
+
+Now you can see the main path from entrance to exit!
+
+
+PHASE 2: Add the Analysis Branches (Where AI Works)
+------------------------------------------------------------------------------
+
+7.  U-NET Segmentation → GRAD-CAM Generator
+8.  Attention Module → Saliency MAP generator
+9.  Clinical Explain Generator → Clinical Report Builder
+
+Now you can see how AI analysis branches out!
+
+
+PHASE 3: Add the Response Assembly (Where Everything Comes Together)
+------------------------------------------------------------------------------
+
+10. Wave Boundary Extractor → Wave Interval Scaler
+11. Severity Assessor → Response Builder
+12. Clinical Explain Generator → Response Builder
+13. Clinical Report Builder → Response Builder
+
+Now you can see how everything flows together into the response!
+
+
+PHASE 4: Add Support Streams (The Helpers)
+------------------------------------------------------------------------------
+
+14. Model Cache → Model Checkpoint Loader (dashed)
+15. Session Manager → AV Block Predictor (dashed)
+16. Error Handler → API Router (dashed)
+
+These dashed lines show the support infrastructure!
+
+
+PHASE 5: Add All Tributaries (Internal Flows)
+------------------------------------------------------------------------------
+
+Now add all 24 internal arrows module by module:
+
+API Gateway (2 arrows):
+17. Proxy → CORS
+18. CORS → API Router
+
+Request Processing (2 arrows):
+19. File Upload → Input Validator
+20. Input Validator → Temp Storage
+
+Signal Processing (2 arrows):
+21. ECG Loader → ECG Preprocessor
+22. ECG Preprocessor → Signal Sampler
+
+ML Inference (7 arrows):
+23. Model Loader → AV Predictor (dashed)
+24. AV Predictor → U-NET
+25. U-NET → Attention
+26. Attention → Classifier
+27. Classifier → Wave Extractor
+28. Wave Extractor → U-NET Segmentation
+29. U-NET Segmentation → Dissociation
+
+XAI (3 arrows):
+30. GRAD-CAM → XAI Integrator
+31. Saliency → XAI Integrator
+32. XAI Integrator → Explain Generator
+
+Diagnosis (2 arrows):
+33. Rule Engine → Confidence
+34. Confidence → Severity
+
+Report (3 arrows):
+35. Report Builder → PDF Generator
+36. PDF Generator → Storage Manager
+37. Storage Manager → Report Builder (dashed)
+
+Response (3 arrows):
+38. Data Serializer → Wave Scaler
+39. Wave Scaler → Response Builder
+40. Data Serializer → Response Builder
+
+
+================================================================================
+                    PART 5: MAKING IT LOOK BEAUTIFUL
+================================================================================
+
+TIPS FOR A BEAUTIFUL RIVER-LIKE FLOW:
+
+1. AVOID CROSSING ARROWS
+   - If arrows cross, click the arrow and drag the middle to create a curve
+   - Make arrows flow around obstacles like water flows around rocks
+
+2. CONSISTENT DIRECTION
+   - Main flow should generally go LEFT → RIGHT and TOP → BOTTOM
+   - Like water flowing downhill
+
+3. SMOOTH CURVES
+   - Click arrow, then click the line to add waypoints
+   - Drag waypoints to create smooth curves
+   - Avoid sharp 90-degree turns
+
+4. LABEL PLACEMENT
+   - Labels should be readable (not upside down)
+   - Place labels on the upper side of horizontal arrows
+   - Place labels on the right side of vertical arrows
+
+5. VISUAL HIERARCHY
+   - Thicker arrows (main river) = more important
+   - Thinner arrows (tributaries) = internal details
+   - Dashed arrows (support) = background helpers
+
+6. COLOR CONTRAST
+   - Black arrows stand out (main flow)
+   - Gray arrows recede (internal details)
+   - This creates visual depth
+
+
+================================================================================
+                            FINAL CHECKLIST
+================================================================================
+
+Before you finish, check:
+
+MAIN RIVER (17 arrows):
+[ ] All 13 solid black arrows are drawn
+[ ] All 3 dashed gray support arrows are drawn
+[ ] All arrows have labels
+[ ] All arrows have proper arrow heads
+[ ] Flow direction is clear (left to right, top to bottom)
+
+TRIBUTARIES (24 arrows):
+[ ] All 24 internal arrows are drawn
+[ ] All are dark gray, 2pt width
+[ ] All have labels
+[ ] They don't cross main river arrows unnecessarily
+
+VISUAL QUALITY:
+[ ] Arrows flow smoothly like a river
+[ ] No unnecessary crossings
+[ ] Labels are readable
+[ ] Consistent formatting
+[ ] The data flow path is immediately obvious
+
+
+================================================================================
+                              YOU'RE DONE!
+================================================================================
+
+TOTAL ARROWS: 41 arrows
+- Main River: 17 arrows (13 solid + 3 dashed + 1 return)
+- Tributaries: 24 arrows
+
+When someone looks at your diagram, they should immediately see:
+1. Where data enters (top left)
+2. How it flows through processing (left to right)
+3. Where AI analyzes it (center)
+4. How results are assembled (bottom)
+5. Where data exits (back to top)
+
+Like a beautiful river flowing from mountain to ocean!
+
+Good luck! Your diagram will look amazing! 🎨
+================================================================================
