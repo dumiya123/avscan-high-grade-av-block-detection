@@ -54,6 +54,46 @@ async def health_check():
         "device": str(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
     }
 
+@app.post("/preview")
+async def preview_ecg(file: UploadFile = File(...)):
+    """Preview endpoint - returns subsampled signal for visualization without AI analysis"""
+    if not file.filename.endswith('.npy'):
+        raise HTTPException(status_code=400, detail="Only .npy files are supported")
+    
+    try:
+        # Save temporary file
+        temp_path = UPLOAD_DIR / f"preview_{file.filename}"
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Load signal
+        signal = np.load(temp_path)
+        orig_signal = signal.flatten()
+        orig_len = len(orig_signal)
+        
+        # Subsample for smooth frontend plotting (1000 points)
+        if orig_len > 1000:
+            indices = np.linspace(0, orig_len - 1, 1000).astype(int)
+            viz_signal = orig_signal[indices]
+        else:
+            viz_signal = orig_signal
+            
+        # Clean up
+        os.remove(temp_path)
+        
+        return {
+            "filename": file.filename,
+            "signal": viz_signal.tolist(),
+            "sample_count": orig_len,
+            "fs": 500
+        }
+        
+    except Exception as e:
+        print(f"Error during preview: {e}")
+        if 'temp_path' in locals() and os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/analyze")
 async def analyze_ecg(file: UploadFile = File(...)):
     if not predictor:

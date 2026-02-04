@@ -12,10 +12,20 @@ import ECGViewer from "../components/features/ECGViewer";
 
 /**
  * AnalysisPage Component
- * The central diagnostic dashboard for file ingestion and results visualization.
+ * Two-window workflow: Preview window + Analysis window
  */
 const AnalysisPage = () => {
-    const { file, isLoading, result, error, processFile } = useECGAnalysis();
+    const {
+        file,
+        isPreviewing,
+        isAnalyzing,
+        previewData,
+        result,
+        error,
+        processFile,
+        runAnalysis
+    } = useECGAnalysis();
+
     const [showSegmentation, setShowSegmentation] = useState(true);
 
     const handleFileChange = (e) => {
@@ -38,10 +48,24 @@ const AnalysisPage = () => {
                     <InputSection
                         file={file}
                         onFileChange={handleFileChange}
-                        isSuccess={!!result}
+                        isLoading={isPreviewing}
                     />
 
-                    {isLoading && <LoadingState />}
+                    {/* Analyse ECG Button */}
+                    {previewData && !result && (
+                        <div className="animate-in slide-in-from-bottom-4 duration-500">
+                            <Button
+                                size="lg"
+                                variant="primary"
+                                className="w-full py-6 text-sm font-black uppercase tracking-widest shadow-xl"
+                                icon={Cpu}
+                                onClick={runAnalysis}
+                                disabled={isAnalyzing}
+                            >
+                                {isAnalyzing ? 'Processing AI...' : 'Analyse ECG'}
+                            </Button>
+                        </div>
+                    )}
 
                     {result && (
                         <DiagnosisCard
@@ -53,14 +77,47 @@ const AnalysisPage = () => {
                     {error && <ErrorCard message={error} />}
                 </div>
 
-                {/* Right Visualization Column */}
-                <div className="lg:col-span-8 flex flex-col gap-8">
-                    <VisualizationSection
-                        result={result}
-                        isLoading={isLoading}
-                        showSegmentation={showSegmentation}
-                        onToggleSegmentation={() => setShowSegmentation(!showSegmentation)}
-                    />
+                {/* Right Visualization Column - Two Windows */}
+                <div className="lg:col-span-8 space-y-8">
+                    {/* Window 1: Preview */}
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2 px-2">
+                            <div className="w-2 h-2 rounded-full bg-slate-400" />
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                Window 01 / Signal Preview
+                            </h3>
+                        </div>
+                        <VisualizationWindow
+                            title="Raw ECG Signal"
+                            data={previewData}
+                            isLoading={isPreviewing}
+                            showSegmentation={false}
+                        />
+                    </div>
+
+                    {/* Window 2: Analysis Result */}
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2 px-2">
+                            <div className={cn(
+                                "w-2 h-2 rounded-full",
+                                result ? "bg-blue-600 animate-pulse" : "bg-slate-300"
+                            )} />
+                            <h3 className={cn(
+                                "text-[10px] font-black uppercase tracking-widest",
+                                result ? "text-blue-600" : "text-slate-300"
+                            )}>
+                                Window 02 / AI Analysis Result
+                            </h3>
+                        </div>
+                        <VisualizationWindow
+                            title="Segmented ECG with Wave Detection"
+                            data={result}
+                            isLoading={isAnalyzing}
+                            showSegmentation={showSegmentation}
+                            onToggleSegmentation={() => setShowSegmentation(!showSegmentation)}
+                            isAnalysisWindow={true}
+                        />
+                    </div>
 
                     {result && <ExplanationSection explanation={result.explanation} />}
                 </div>
@@ -69,15 +126,15 @@ const AnalysisPage = () => {
     );
 };
 
-/* Internal Shared UI Components for this Page */
+/* --- UI Components --- */
 
-const InputSection = ({ file, onFileChange, isSuccess }) => (
+const InputSection = ({ file, onFileChange, isLoading }) => (
     <Card variant="default" padding="md">
         <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2">
-                <Upload className="text-blue-600 w-5 h-5" /> Patient Intake
+                <Upload className="text-blue-600 w-5 h-5" /> Upload ECG
             </h2>
-            <Badge>Input Node</Badge>
+            <Badge>Input</Badge>
         </div>
 
         <div className="relative group">
@@ -86,6 +143,7 @@ const InputSection = ({ file, onFileChange, isSuccess }) => (
                 accept=".npy"
                 onChange={onFileChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                disabled={isLoading}
             />
             <div className={cn(
                 "border-2 border-dashed rounded-2xl p-8 text-center transition-all",
@@ -95,10 +153,14 @@ const InputSection = ({ file, onFileChange, isSuccess }) => (
                     "w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 transition-transform group-hover:scale-110",
                     file ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-400'
                 )}>
-                    <Upload className="w-7 h-7" />
+                    {isLoading ? (
+                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                        <Upload className="w-7 h-7" />
+                    )}
                 </div>
                 <p className="text-sm text-slate-600 font-bold">
-                    {file ? 'Change Dataset File' : 'Drop Clinical Signal'}
+                    {file ? 'File Loaded' : 'Drop ECG File'}
                 </p>
                 <p className="text-[10px] text-slate-400 mt-2 font-mono uppercase tracking-widest">
                     Format: .NPY (500Hz)
@@ -116,27 +178,15 @@ const InputSection = ({ file, onFileChange, isSuccess }) => (
                         <p className="font-bold text-slate-700 truncate">{file.name}</p>
                         <p className="text-[9px] text-slate-400 font-mono">SAMPLED AT: 500 HZ</p>
                     </div>
-                    {isSuccess && <CheckCircle className="w-5 h-5 text-green-500" />}
+                    <CheckCircle className="w-5 h-5 text-green-500" />
                 </div>
             </div>
         )}
     </Card>
 );
 
-const LoadingState = () => (
-    <Card padding="lg" className="flex flex-col items-center justify-center text-center animate-pulse border-blue-200">
-        <div className="relative w-16 h-16 mb-4">
-            <div className="absolute inset-0 border-4 border-blue-100 rounded-full" />
-            <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            <Activity className="absolute inset-0 m-auto w-6 h-6 text-blue-600 animate-bounce" />
-        </div>
-        <p className="text-blue-800 font-black text-lg">AtrionNet Analysis</p>
-        <p className="text-slate-400 text-xs mt-1">Evaluating temporal dissociation patterns...</p>
-    </Card>
-);
-
 const DiagnosisCard = ({ result, reportUrl }) => (
-    <Card padding="md" className="border-l-4 border-blue-600 space-y-6">
+    <Card padding="md" className="border-l-4 border-blue-600 space-y-6 animate-in slide-in-from-bottom-6 duration-700">
         <Badge>Analysis Summary</Badge>
 
         <div className="bg-slate-900/5 p-4 rounded-xl border border-slate-200/50">
@@ -173,46 +223,69 @@ const ErrorCard = ({ message }) => (
     </Card>
 );
 
-const VisualizationSection = ({ result, isLoading, showSegmentation, onToggleSegmentation }) => (
-    <section className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-100">
+const VisualizationWindow = ({
+    title,
+    data,
+    isLoading,
+    showSegmentation = false,
+    onToggleSegmentation,
+    isAnalysisWindow = false
+}) => (
+    <section className={cn(
+        "bg-white rounded-3xl overflow-hidden shadow-2xl border transition-all duration-500",
+        data ? 'border-slate-100 opacity-100' : 'border-slate-100 opacity-40'
+    )}>
         <header className="p-6 border-b flex justify-between items-center bg-slate-50/50">
             <h3 className="text-sm font-black text-slate-600 flex items-center gap-2 uppercase tracking-widest">
-                Interactive Signal Trace
+                {title}
             </h3>
-            <div className="flex items-center gap-3">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Segmentation</span>
-                <button
-                    onClick={onToggleSegmentation}
-                    className={cn(
-                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                        showSegmentation ? 'bg-blue-600' : 'bg-slate-200'
-                    )}
-                >
-                    <span className={cn(
-                        "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                        showSegmentation ? 'translate-x-6' : 'translate-x-1'
-                    )} />
-                </button>
-            </div>
+            {isAnalysisWindow && data && (
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Segmentation</span>
+                    <button
+                        onClick={onToggleSegmentation}
+                        className={cn(
+                            "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                            showSegmentation ? 'bg-blue-600' : 'bg-slate-200'
+                        )}
+                    >
+                        <span className={cn(
+                            "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                            showSegmentation ? 'translate-x-6' : 'translate-x-1'
+                        )} />
+                    </button>
+                </div>
+            )}
         </header>
 
-        <div className="h-[350px] w-full p-4">
-            {result ? (
+        <div className="h-[350px] w-full p-4 relative">
+            {isLoading && (
+                <div className="absolute inset-0 bg-white/80 z-20 flex flex-col items-center justify-center backdrop-blur-sm">
+                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+                    <p className="text-blue-600 font-black text-xs uppercase tracking-widest">
+                        {isAnalysisWindow ? 'Running AI Analysis...' : 'Loading Preview...'}
+                    </p>
+                </div>
+            )}
+
+            {data ? (
                 <ECGViewer
-                    signal={result.signal}
+                    signal={data.signal}
                     fs={500}
-                    waves={result.waves}
-                    showSegmentation={showSegmentation}
+                    waves={isAnalysisWindow ? data.waves : null}
+                    showSegmentation={isAnalysisWindow ? showSegmentation : false}
                 />
             ) : (
                 <div className="h-full flex flex-col items-center justify-center text-slate-300">
-                    <ShieldAlert className="w-16 h-16 opacity-10 mb-4" />
-                    <p className="text-sm font-bold uppercase tracking-widest">No Signal Data</p>
+                    <Activity className="w-16 h-16 opacity-10 mb-4" />
+                    <p className="text-sm font-bold uppercase tracking-widest">
+                        {isAnalysisWindow ? 'Awaiting Analysis' : 'No Data'}
+                    </p>
                 </div>
             )}
         </div>
 
-        {result && showSegmentation && <SegmentationLegend />}
+        {isAnalysisWindow && data && showSegmentation && <SegmentationLegend />}
     </section>
 );
 
@@ -236,7 +309,7 @@ const SegmentationLegend = () => (
 );
 
 const ExplanationSection = ({ explanation }) => (
-    <Card variant="default" padding="none" className="bg-slate-900 shadow-2xl">
+    <Card variant="default" padding="none" className="bg-slate-900 shadow-2xl animate-in fade-in duration-1000">
         <header className="p-6 border-b border-slate-800 bg-slate-900/50">
             <h3 className="text-xs font-black text-blue-400 flex items-center gap-2 uppercase tracking-[0.2em]">
                 <Cpu className="w-4 h-4" /> Clinical Rationale
