@@ -1,0 +1,832 @@
+================================================================================
+          ML PIPELINE & MODEL ARCHITECTURE DIAGRAM GUIDE
+        Complete U-Net Neural Network with Attention Mechanism
+================================================================================
+
+This guide shows you how to draw the complete Machine Learning Pipeline and 
+the detailed U-Net Model Architecture. This is a STANDALONE diagram showing 
+how your AI model works internally.
+
+
+================================================================================
+                    PART 1: UNDERSTANDING THE ML PIPELINE
+================================================================================
+
+THE COMPLETE ML PIPELINE HAS 5 MAIN STAGES:
+
+1. INPUT STAGE - Raw ECG signal enters
+2. PREPROCESSING STAGE - Signal is cleaned and normalized
+3. MODEL STAGE - U-Net processes the signal
+4. POST-PROCESSING STAGE - Extract medical information
+5. OUTPUT STAGE - Diagnosis and explanations
+
+
+THE U-NET ARCHITECTURE HAS 3 PARTS:
+
+1. ENCODER (Downsampling Path) - Extracts features
+2. BOTTLENECK (Deepest Layer) - Attention mechanism
+3. DECODER (Upsampling Path) - Reconstructs output
+
+
+TOTAL COMPONENTS TO DRAW: 35 boxes
+TOTAL ARROWS TO DRAW: 42 arrows
+
+
+================================================================================
+                    PART 2: LAYOUT AND POSITIONING
+================================================================================
+
+RECOMMENDED CANVAS SIZE:
+   - Width: 1400 pixels
+   - Height: 1000 pixels
+   - This gives you plenty of space!
+
+
+LAYOUT STRUCTURE (Left to Right Flow):
+
+┌────────┐   ┌──────────┐   ┌─────────────────┐   ┌──────────┐   ┌────────┐
+│ INPUT  │ → │  PREPRO  │ → │   U-NET MODEL   │ → │   POST   │ → │ OUTPUT │
+│ STAGE  │   │  CESSING │   │  (Main Section) │   │  PROCESS │   │ STAGE  │
+└────────┘   └──────────┘   └─────────────────┘   └──────────┘   └────────┘
+
+The U-Net Model section will be the largest and most detailed!
+
+
+================================================================================
+                    PART 3: DRAWING THE INPUT STAGE
+================================================================================
+
+STAGE 1: INPUT (Left Side)
+------------------------------------------------------------------------------
+
+Draw 1 box:
+
+BOX 1: ECG Input
+   Position: Far left, vertically centered
+   Size: 150px wide × 80px tall
+   Color: Light Green (#E8F5E9)
+   Border: 3px, Green (#4CAF50)
+   Title: "ECG Input"
+   Subtitle: "(1, 5000)"
+   
+   This represents the raw ECG signal: 1 channel, 5000 samples
+
+
+================================================================================
+                    PART 4: DRAWING THE PREPROCESSING STAGE
+================================================================================
+
+STAGE 2: PREPROCESSING (Left-Center)
+------------------------------------------------------------------------------
+
+Draw 3 boxes vertically stacked:
+
+BOX 2: Bandpass Filter
+   Position: Right of ECG Input
+   Size: 180px wide × 60px tall
+   Color: Light Blue (#E3F2FD)
+   Border: 2px, Blue (#2196F3)
+   Title: "Bandpass Filter"
+   Subtitle: "0.5-40 Hz"
+
+BOX 3: Normalization
+   Position: Below Bandpass Filter
+   Size: 180px wide × 60px tall
+   Color: Light Blue (#E3F2FD)
+   Border: 2px, Blue (#2196F3)
+   Title: "Normalization"
+   Subtitle: "Z-score"
+
+BOX 4: Tensor Conversion
+   Position: Below Normalization
+   Size: 180px wide × 60px tall
+   Color: Light Blue (#E3F2FD)
+   Border: 2px, Blue (#2196F3)
+   Title: "Tensor Conversion"
+   Subtitle: "(1, 1, 5000)"
+
+
+================================================================================
+                    PART 5: DRAWING THE U-NET ENCODER
+================================================================================
+
+STAGE 3A: ENCODER (Downsampling Path)
+------------------------------------------------------------------------------
+
+The encoder has 4 blocks, each getting smaller in length but more channels.
+
+Draw these blocks from top to bottom:
+
+
+ENCODER BLOCK 1:
+   Position: Right of Preprocessing, top area
+   Size: 200px wide × 100px tall
+   Color: Light Purple (#F3E5F5)
+   Border: 3px, Purple (#9C27B0)
+   Title: "Encoder Block 1"
+   
+   Internal components (draw inside):
+   - Conv1D (1→64)
+   - Conv1D (64→64)
+   - MaxPool (÷2)
+   
+   Output shape: (64, 2500)
+
+
+ENCODER BLOCK 2:
+   Position: Below Block 1
+   Size: 200px wide × 100px tall
+   Color: Light Purple (#F3E5F5)
+   Border: 3px, Purple (#9C27B0)
+   Title: "Encoder Block 2"
+   
+   Internal components:
+   - Conv1D (64→128)
+   - Conv1D (128→128)
+   - MaxPool (÷2)
+   
+   Output shape: (128, 1250)
+
+
+ENCODER BLOCK 3:
+   Position: Below Block 2
+   Size: 200px wide × 100px tall
+   Color: Light Purple (#F3E5F5)
+   Border: 3px, Purple (#9C27B0)
+   Title: "Encoder Block 3"
+   
+   Internal components:
+   - Conv1D (128→256)
+   - Conv1D (256→256)
+   - MaxPool (÷2)
+   
+   Output shape: (256, 625)
+
+
+ENCODER BLOCK 4:
+   Position: Below Block 3
+   Size: 200px wide × 100px tall
+   Color: Light Purple (#F3E5F5)
+   Border: 3px, Purple (#9C27B0)
+   Title: "Encoder Block 4"
+   
+   Internal components:
+   - Conv1D (256→512)
+   - Conv1D (512→512)
+   - MaxPool (÷2)
+   
+   Output shape: (512, 312)
+
+
+================================================================================
+                    PART 6: DRAWING THE BOTTLENECK
+================================================================================
+
+STAGE 3B: BOTTLENECK (Deepest Layer with Attention)
+------------------------------------------------------------------------------
+
+BOTTLENECK BLOCK:
+   Position: Below Encoder Block 4, centered
+   Size: 250px wide × 150px tall
+   Color: Light Orange (#FFF3E0)
+   Border: 4px, Orange (#FF9800) - THICKER to show importance!
+   Title: "BOTTLENECK + ATTENTION"
+   
+   Internal components (draw inside):
+   
+   1. Conv1D (512→1024)
+   2. Conv1D (1024→1024)
+   3. Channel Attention
+   4. Spatial Attention
+   
+   Output shape: (1024, 312)
+   
+   This is the DEEPEST and MOST IMPORTANT part of the network!
+
+
+ATTENTION DETAIL BOX (Optional - draw to the side):
+   Position: Right of Bottleneck
+   Size: 200px wide × 100px tall
+   Color: Light Yellow (#FFFDE7)
+   Border: 2px, Yellow (#FFC107)
+   Title: "Attention Mechanism"
+   
+   Components:
+   - Channel Attention: Focuses on WHICH features
+   - Spatial Attention: Focuses on WHERE in signal
+
+
+================================================================================
+                    PART 7: DRAWING THE U-NET DECODER
+================================================================================
+
+STAGE 3C: DECODER (Upsampling Path)
+------------------------------------------------------------------------------
+
+The decoder has 4 blocks, mirror of encoder but going upward.
+
+Draw these blocks from bottom to top (opposite of encoder):
+
+
+DECODER BLOCK 4:
+   Position: Right of Bottleneck, aligned with Encoder Block 4
+   Size: 200px wide × 100px tall
+   Color: Light Teal (#E0F2F1)
+   Border: 3px, Teal (#009688)
+   Title: "Decoder Block 4"
+   
+   Internal components:
+   - Upsample (×2)
+   - Concat with Encoder 4
+   - Conv1D (1536→512)
+   - Conv1D (512→512)
+   
+   Output shape: (512, 625)
+
+
+DECODER BLOCK 3:
+   Position: Above Block 4, aligned with Encoder Block 3
+   Size: 200px wide × 100px tall
+   Color: Light Teal (#E0F2F1)
+   Border: 3px, Teal (#009688)
+   Title: "Decoder Block 3"
+   
+   Internal components:
+   - Upsample (×2)
+   - Concat with Encoder 3
+   - Conv1D (768→256)
+   - Conv1D (256→256)
+   
+   Output shape: (256, 1250)
+
+
+DECODER BLOCK 2:
+   Position: Above Block 3, aligned with Encoder Block 2
+   Size: 200px wide × 100px tall
+   Color: Light Teal (#E0F2F1)
+   Border: 3px, Teal (#009688)
+   Title: "Decoder Block 2"
+   
+   Internal components:
+   - Upsample (×2)
+   - Concat with Encoder 2
+   - Conv1D (384→128)
+   - Conv1D (128→128)
+   
+   Output shape: (128, 2500)
+
+
+DECODER BLOCK 1:
+   Position: Above Block 2, aligned with Encoder Block 1
+   Size: 200px wide × 100px tall
+   Color: Light Teal (#E0F2F1)
+   Border: 3px, Teal (#009688)
+   Title: "Decoder Block 1"
+   
+   Internal components:
+   - Upsample (×2)
+   - Concat with Encoder 1
+   - Conv1D (192→64)
+   - Conv1D (64→64)
+   
+   Output shape: (64, 5000)
+
+
+================================================================================
+                    PART 8: DRAWING THE OUTPUT HEADS
+================================================================================
+
+STAGE 3D: MULTI-TASK OUTPUT HEADS
+------------------------------------------------------------------------------
+
+The U-Net has TWO output heads (multi-task learning):
+
+
+OUTPUT HEAD 1: Segmentation Head
+   Position: Right of Decoder Block 1, top area
+   Size: 200px wide × 80px tall
+   Color: Light Pink (#FCE4EC)
+   Border: 3px, Pink (#E91E63)
+   Title: "Segmentation Head"
+   
+   Internal components:
+   - Conv1D (64→5)
+   - Softmax
+   
+   Output shape: (5, 5000)
+   Output meaning: 5 classes for each sample
+
+
+OUTPUT HEAD 2: Classification Head
+   Position: Right of Bottleneck, bottom area
+   Size: 200px wide × 120px tall
+   Color: Light Pink (#FCE4EC)
+   Border: 3px, Pink (#E91E63)
+   Title: "Classification Head"
+   
+   Internal components:
+   - Global Avg Pool
+   - FC (1024→512)
+   - Dropout (0.5)
+   - FC (512→256)
+   - Dropout (0.5)
+   - FC (256→5)
+   - Softmax
+   
+   Output shape: (5,)
+   Output meaning: 5 AV block classes
+
+
+================================================================================
+                    PART 9: DRAWING POST-PROCESSING STAGE
+================================================================================
+
+STAGE 4: POST-PROCESSING (Right-Center)
+------------------------------------------------------------------------------
+
+Draw 4 boxes vertically stacked:
+
+BOX 5: Wave Extraction
+   Position: Right of Output Heads
+   Size: 180px wide × 60px tall
+   Color: Light Cyan (#E0F7FA)
+   Border: 2px, Cyan (#00BCD4)
+   Title: "Wave Extraction"
+   Subtitle: "Find P, QRS, T"
+
+BOX 6: Interval Calculation
+   Position: Below Wave Extraction
+   Size: 180px wide × 60px tall
+   Color: Light Cyan (#E0F7FA)
+   Border: 2px, Cyan (#00BCD4)
+   Title: "Interval Calculation"
+   Subtitle: "PR, RR intervals"
+
+BOX 7: Dissociation Detection
+   Position: Below Interval Calculation
+   Size: 180px wide × 60px tall
+   Color: Light Cyan (#E0F7FA)
+   Border: 2px, Cyan (#00BCD4)
+   Title: "Dissociation Detection"
+   Subtitle: "P-QRS matching"
+
+BOX 8: Clinical Rules
+   Position: Below Dissociation Detection
+   Size: 180px wide × 60px tall
+   Color: Light Cyan (#E0F7FA)
+   Border: 2px, Cyan (#00BCD4)
+   Title: "Clinical Rules"
+   Subtitle: "Medical validation"
+
+
+================================================================================
+                    PART 10: DRAWING OUTPUT STAGE
+================================================================================
+
+STAGE 5: OUTPUT (Right Side)
+------------------------------------------------------------------------------
+
+Draw 2 boxes vertically stacked:
+
+BOX 9: Final Diagnosis
+   Position: Far right, top area
+   Size: 150px wide × 80px tall
+   Color: Light Green (#E8F5E9)
+   Border: 3px, Green (#4CAF50)
+   Title: "Final Diagnosis"
+   Subtitle: "AV Block Type"
+
+BOX 10: Confidence Score
+   Position: Below Final Diagnosis
+   Size: 150px wide × 80px tall
+   Color: Light Green (#E8F5E9)
+   Border: 3px, Green (#4CAF50)
+   Title: "Confidence"
+   Subtitle: "0-100%"
+
+
+================================================================================
+                    PART 11: DRAWING ARROWS (THE DATA FLOW!)
+================================================================================
+
+Now draw arrows to show how data flows through the pipeline.
+
+ARROW STYLE:
+   - Main flow: Black, 3pt, solid
+   - Skip connections: Gray, 2pt, dashed
+   - Internal: Dark gray, 1.5pt, solid
+
+
+PHASE 1: INPUT TO PREPROCESSING (4 arrows)
+------------------------------------------------------------------------------
+
+Arrow #1:
+   FROM: ECG Input
+   TO: Bandpass Filter
+   LABEL: "Raw Signal (5000,)"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #2:
+   FROM: Bandpass Filter
+   TO: Normalization
+   LABEL: "Filtered"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #3:
+   FROM: Normalization
+   TO: Tensor Conversion
+   LABEL: "Normalized"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #4:
+   FROM: Tensor Conversion
+   TO: Encoder Block 1
+   LABEL: "Tensor (1,1,5000)"
+   COLOR: Black, WIDTH: 3pt
+
+
+PHASE 2: ENCODER DOWNSAMPLING (4 arrows)
+------------------------------------------------------------------------------
+
+Arrow #5:
+   FROM: Encoder Block 1
+   TO: Encoder Block 2
+   LABEL: "(64, 2500)"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #6:
+   FROM: Encoder Block 2
+   TO: Encoder Block 3
+   LABEL: "(128, 1250)"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #7:
+   FROM: Encoder Block 3
+   TO: Encoder Block 4
+   LABEL: "(256, 625)"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #8:
+   FROM: Encoder Block 4
+   TO: Bottleneck
+   LABEL: "(512, 312)"
+   COLOR: Black, WIDTH: 3pt
+
+
+PHASE 3: BOTTLENECK TO DECODER (1 arrow)
+------------------------------------------------------------------------------
+
+Arrow #9:
+   FROM: Bottleneck
+   TO: Decoder Block 4
+   LABEL: "(1024, 312)"
+   COLOR: Black, WIDTH: 3pt
+
+
+PHASE 4: DECODER UPSAMPLING (3 arrows)
+------------------------------------------------------------------------------
+
+Arrow #10:
+   FROM: Decoder Block 4
+   TO: Decoder Block 3
+   LABEL: "(512, 625)"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #11:
+   FROM: Decoder Block 3
+   TO: Decoder Block 2
+   LABEL: "(256, 1250)"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #12:
+   FROM: Decoder Block 2
+   TO: Decoder Block 1
+   LABEL: "(128, 2500)"
+   COLOR: Black, WIDTH: 3pt
+
+
+PHASE 5: SKIP CONNECTIONS (4 arrows - VERY IMPORTANT!)
+------------------------------------------------------------------------------
+
+These are the U-Net's signature skip connections!
+
+Arrow #13 (DASHED):
+   FROM: Encoder Block 1
+   TO: Decoder Block 1
+   LABEL: "Skip (64, 2500)"
+   COLOR: Gray (#999999), WIDTH: 2pt
+   STYLE: Dashed
+   
+   Draw this horizontally across the diagram!
+
+Arrow #14 (DASHED):
+   FROM: Encoder Block 2
+   TO: Decoder Block 2
+   LABEL: "Skip (128, 1250)"
+   COLOR: Gray, WIDTH: 2pt
+   STYLE: Dashed
+
+Arrow #15 (DASHED):
+   FROM: Encoder Block 3
+   TO: Decoder Block 3
+   LABEL: "Skip (256, 625)"
+   COLOR: Gray, WIDTH: 2pt
+   STYLE: Dashed
+
+Arrow #16 (DASHED):
+   FROM: Encoder Block 4
+   TO: Decoder Block 4
+   LABEL: "Skip (512, 312)"
+   COLOR: Gray, WIDTH: 2pt
+   STYLE: Dashed
+
+
+PHASE 6: OUTPUT HEADS (2 arrows)
+------------------------------------------------------------------------------
+
+Arrow #17:
+   FROM: Decoder Block 1
+   TO: Segmentation Head
+   LABEL: "(64, 5000)"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #18:
+   FROM: Bottleneck
+   TO: Classification Head
+   LABEL: "(1024, 312)"
+   COLOR: Black, WIDTH: 3pt
+
+
+PHASE 7: POST-PROCESSING FLOW (7 arrows)
+------------------------------------------------------------------------------
+
+Arrow #19:
+   FROM: Segmentation Head
+   TO: Wave Extraction
+   LABEL: "Seg Mask (5, 5000)"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #20:
+   FROM: Wave Extraction
+   TO: Interval Calculation
+   LABEL: "Wave Boundaries"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #21:
+   FROM: Interval Calculation
+   TO: Dissociation Detection
+   LABEL: "PR/RR Intervals"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #22:
+   FROM: Dissociation Detection
+   TO: Clinical Rules
+   LABEL: "Dissociation Ratio"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #23:
+   FROM: Classification Head
+   TO: Clinical Rules
+   LABEL: "NN Prediction"
+   COLOR: Black, WIDTH: 3pt
+
+
+PHASE 8: FINAL OUTPUT (2 arrows)
+------------------------------------------------------------------------------
+
+Arrow #24:
+   FROM: Clinical Rules
+   TO: Final Diagnosis
+   LABEL: "Validated Diagnosis"
+   COLOR: Black, WIDTH: 3pt
+
+Arrow #25:
+   FROM: Clinical Rules
+   TO: Confidence Score
+   LABEL: "Confidence %"
+   COLOR: Black, WIDTH: 3pt
+
+
+================================================================================
+                    PART 12: DRAWING ORDER (STEP-BY-STEP)
+================================================================================
+
+Follow this exact order for a beautiful, flowing diagram:
+
+
+STEP 1: Draw Input and Preprocessing (4 boxes)
+------------------------------------------------------------------------------
+   a) ECG Input
+   b) Bandpass Filter
+   c) Normalization
+   d) Tensor Conversion
+
+
+STEP 2: Draw Encoder Blocks (4 boxes)
+------------------------------------------------------------------------------
+   a) Encoder Block 1
+   b) Encoder Block 2
+   c) Encoder Block 3
+   d) Encoder Block 4
+
+
+STEP 3: Draw Bottleneck (1 box)
+------------------------------------------------------------------------------
+   a) Bottleneck + Attention (make it stand out!)
+
+
+STEP 4: Draw Decoder Blocks (4 boxes)
+------------------------------------------------------------------------------
+   a) Decoder Block 4
+   b) Decoder Block 3
+   c) Decoder Block 2
+   d) Decoder Block 1
+
+
+STEP 5: Draw Output Heads (2 boxes)
+------------------------------------------------------------------------------
+   a) Segmentation Head
+   b) Classification Head
+
+
+STEP 6: Draw Post-Processing (4 boxes)
+------------------------------------------------------------------------------
+   a) Wave Extraction
+   b) Interval Calculation
+   c) Dissociation Detection
+   d) Clinical Rules
+
+
+STEP 7: Draw Final Output (2 boxes)
+------------------------------------------------------------------------------
+   a) Final Diagnosis
+   b) Confidence Score
+
+
+STEP 8: Draw Main Flow Arrows (25 arrows)
+------------------------------------------------------------------------------
+   Draw in order from Phase 1 to Phase 8 (listed above)
+   These show the primary data path
+
+
+STEP 9: Draw Skip Connections (4 dashed arrows)
+------------------------------------------------------------------------------
+   Draw the 4 horizontal skip connections
+   These are the U-Net's signature feature!
+
+
+================================================================================
+                    PART 13: VISUAL ENHANCEMENTS
+================================================================================
+
+MAKING THE DIAGRAM IMPRESSIVE:
+
+1. ADD SHAPE ANNOTATIONS:
+   - Add small text boxes showing tensor shapes
+   - Example: "(64, 2500)" next to each block
+   - This shows how data transforms
+
+2. COLOR CODING:
+   - Encoder: Purple (feature extraction)
+   - Bottleneck: Orange (attention/importance)
+   - Decoder: Teal (reconstruction)
+   - Output Heads: Pink (final predictions)
+   - Post-processing: Cyan (medical analysis)
+
+3. ADD A LEGEND:
+   Position: Bottom-left corner
+   Size: 200px × 150px
+   
+   Contents:
+   - Solid Black Arrow = Main flow
+   - Dashed Gray Arrow = Skip connection
+   - Numbers in () = Tensor shape (channels, length)
+
+4. ADD TITLE:
+   Position: Top center
+   Text: "U-Net Model Architecture for AV Block Detection"
+   Font: Bold, 20pt
+
+5. ADD PARAMETER COUNT:
+   Position: Near Bottleneck
+   Text: "Total Parameters: 8.5M"
+   Font: Bold, 12pt
+
+
+================================================================================
+                    PART 14: COMPLETE COMPONENT SUMMARY
+================================================================================
+
+TOTAL BOXES TO DRAW: 21 boxes
+
+Input Stage: 1 box
+Preprocessing: 3 boxes
+Encoder: 4 boxes
+Bottleneck: 1 box
+Decoder: 4 boxes
+Output Heads: 2 boxes
+Post-Processing: 4 boxes
+Final Output: 2 boxes
+
+
+TOTAL ARROWS TO DRAW: 25 arrows
+
+Input to Preprocessing: 4 arrows
+Encoder Downsampling: 4 arrows
+Bottleneck Connection: 1 arrow
+Decoder Upsampling: 3 arrows
+Skip Connections: 4 arrows (dashed)
+Output Heads: 2 arrows
+Post-Processing: 5 arrows
+Final Output: 2 arrows
+
+
+================================================================================
+                    PART 15: FINAL CHECKLIST
+================================================================================
+
+BOXES:
+[ ] 1 Input box (ECG Input)
+[ ] 3 Preprocessing boxes
+[ ] 4 Encoder blocks (purple)
+[ ] 1 Bottleneck block (orange, thicker border)
+[ ] 4 Decoder blocks (teal)
+[ ] 2 Output heads (pink)
+[ ] 4 Post-processing boxes (cyan)
+[ ] 2 Final output boxes (green)
+
+ARROWS:
+[ ] 4 preprocessing flow arrows
+[ ] 4 encoder downsampling arrows
+[ ] 1 bottleneck connection arrow
+[ ] 3 decoder upsampling arrows
+[ ] 4 skip connection arrows (gray, dashed)
+[ ] 2 output head arrows
+[ ] 5 post-processing arrows
+[ ] 2 final output arrows
+
+VISUAL QUALITY:
+[ ] All boxes properly colored
+[ ] All boxes have titles and shapes
+[ ] Skip connections are dashed and gray
+[ ] Main flow arrows are black and solid
+[ ] No unnecessary arrow crossings
+[ ] Legend added
+[ ] Title added
+[ ] Professional appearance
+
+TECHNICAL ACCURACY:
+[ ] Tensor shapes are correct
+[ ] Skip connections match encoder-decoder pairs
+[ ] Multi-task outputs clearly shown
+[ ] Attention mechanism highlighted
+
+
+================================================================================
+                    PART 16: THE COMPLETE PICTURE
+================================================================================
+
+When you finish, your ML Pipeline diagram will show:
+
+LEFT SIDE: Input & Preprocessing
+   - Raw ECG enters
+   - Gets filtered and normalized
+   - Converted to tensor
+
+CENTER: U-Net Model
+   - Encoder extracts features (going down)
+   - Bottleneck applies attention (deepest point)
+   - Decoder reconstructs (going up)
+   - Skip connections preserve details
+   - Two output heads (segmentation + classification)
+
+RIGHT SIDE: Post-Processing & Output
+   - Extract medical information
+   - Apply clinical rules
+   - Final diagnosis with confidence
+
+THE FLOW:
+   ECG → Filter → Normalize → U-Net → Post-Process → Diagnosis
+
+This shows the COMPLETE AI PIPELINE from raw signal to medical diagnosis!
+
+
+================================================================================
+                            YOU'RE READY!
+================================================================================
+
+This diagram will:
+   ✅ Show complete ML pipeline
+   ✅ Explain U-Net architecture
+   ✅ Display multi-task learning
+   ✅ Highlight attention mechanism
+   ✅ Show medical post-processing
+   ✅ Be impressive and professional!
+
+Total drawing time: 45-60 minutes
+
+Follow the steps in order and you'll have an amazing ML architecture diagram!
+
+Good luck! 🚀🧠
+
+================================================================================

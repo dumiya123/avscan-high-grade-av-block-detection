@@ -1,0 +1,485 @@
+================================================================================
+              SIMPLE LOGIC TIER ↔ DATA TIER CONNECTION GUIDE
+                    Basic Arrows to Connect the Two Tiers
+================================================================================
+
+This guide shows you how to draw simple, clean arrows connecting your Logic 
+Tier to the Data Tier. No complex internal flows - just the essential 
+connections!
+
+
+================================================================================
+                    PART 1: THE SIMPLE DATA TIER LAYOUT
+================================================================================
+
+DRAW 4 SIMPLE STORAGE BOXES (No internal components needed):
+
+
+BOX 1: FILE STORAGE (Left)
+------------------------------------------------------------------------------
+   Position: Bottom-left, below your Logic Tier
+   Size: 300px wide × 80px tall
+   Color: Light Blue (#E3F2FD)
+   Border: 3px, Blue (#2196F3)
+   Title: "File Storage"
+   
+   What it does: Stores ECG files and PDF reports
+
+
+BOX 2: MODEL STORAGE (Left-Center)
+------------------------------------------------------------------------------
+   Position: Bottom-left-center
+   Size: 300px wide × 80px tall
+   Color: Light Purple (#F3E5F5)
+   Border: 3px, Purple (#9C27B0)
+   Title: "Model Storage"
+   
+   What it does: Stores AI model files
+
+
+BOX 3: CACHE STORAGE (Right-Center)
+------------------------------------------------------------------------------
+   Position: Bottom-right-center
+   Size: 300px wide × 80px tall
+   Color: Light Orange (#FFF3E0)
+   Border: 3px, Orange (#FF9800)
+   Title: "Cache Storage"
+   
+   What it does: Stores temporary data for fast access
+
+
+BOX 4: SESSION STORAGE (Right)
+------------------------------------------------------------------------------
+   Position: Bottom-right
+   Size: 300px wide × 80px tall
+   Color: Light Green (#E8F5E9)
+   Border: 3px, Green (#4CAF50)
+   Title: "Session Storage"
+   
+   What it does: Tracks user sessions and errors
+
+
+LAYOUT VIEW:
+
+┌────────────────────────────────────────────────────────────────┐
+│                        LOGIC TIER                               │
+│  (Your existing diagram with 9 modules and 41 arrows)          │
+└────────────────────────────────────────────────────────────────┘
+                              ↕
+                    (Leave 100px gap)
+                              ↕
+┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+│   File   │  │  Model   │  │  Cache   │  │ Session  │
+│ Storage  │  │ Storage  │  │ Storage  │  │ Storage  │
+└──────────┘  └──────────┘  └──────────┘  └──────────┘
+
+
+================================================================================
+                PART 2: DRAW THE CONNECTION ARROWS (8 ARROWS)
+================================================================================
+
+ARROW STYLE:
+   - Color: Blue (#2196F3)
+   - Width: 3pt
+   - Style: Solid
+   - Arrow Head: Large (size 7)
+
+
+Draw these arrows in order:
+
+
+CONNECTION #1: Request Processing → File Storage
+------------------------------------------------------------------------------
+
+   FROM: Request Processing Pipeline (in Logic Tier)
+         Specifically from the bottom of this module
+   
+   TO: File Storage (in Data Tier)
+         To the top of this box
+   
+   LABEL: "Store/Retrieve ECG Files"
+   
+   DIRECTION: Bidirectional (arrows on both ends)
+   
+   What this shows: ECG files are uploaded and stored here
+
+
+CONNECTION #2: Signal Processing → File Storage
+------------------------------------------------------------------------------
+
+   FROM: Signal Processing Module (in Logic Tier)
+         From the bottom of this module
+   
+   TO: File Storage (in Data Tier)
+         To the top of this box
+   
+   LABEL: "Load ECG Data"
+   
+   DIRECTION: Upward (arrow pointing from Data to Logic)
+   STYLE: Dashed (to show it's a return flow)
+   
+   What this shows: Processed signals are loaded from storage
+
+
+CONNECTION #3: ML Inference Engine → Model Storage
+------------------------------------------------------------------------------
+
+   FROM: ML Inference Engine (in Logic Tier)
+         From the bottom of this module
+   
+   TO: Model Storage (in Data Tier)
+         To the top of this box
+   
+   LABEL: "Load AI Model"
+   
+   DIRECTION: Upward (arrow pointing from Data to Logic)
+   STYLE: Dashed
+   
+   What this shows: AI model is loaded from storage
+
+
+CONNECTION #4: ML Inference Engine → Cache Storage
+------------------------------------------------------------------------------
+
+   FROM: ML Inference Engine (in Logic Tier)
+         From the bottom of this module
+   
+   TO: Cache Storage (in Data Tier)
+         To the top of this box
+   
+   LABEL: "Cache Model & Results"
+   
+   DIRECTION: Bidirectional
+   
+   What this shows: Model and results are cached for speed
+
+
+CONNECTION #5: Report Generation → File Storage
+------------------------------------------------------------------------------
+
+   FROM: Report Generation Pipeline (in Logic Tier)
+         From the bottom of this module
+   
+   TO: File Storage (in Data Tier)
+         To the top of this box
+   
+   LABEL: "Save PDF Reports"
+   
+   DIRECTION: Downward (arrow pointing from Logic to Data)
+   
+   What this shows: Generated reports are saved to storage
+
+
+CONNECTION #6: State Management → Cache Storage
+------------------------------------------------------------------------------
+
+   FROM: State Management (in Logic Tier)
+         From the bottom of this module
+   
+   TO: Cache Storage (in Data Tier)
+         To the top of this box
+   
+   LABEL: "Cache Operations"
+   
+   DIRECTION: Bidirectional
+   
+   What this shows: All caching happens through state management
+
+
+CONNECTION #7: State Management → Session Storage
+------------------------------------------------------------------------------
+
+   FROM: State Management (in Logic Tier)
+         From the bottom of this module
+   
+   TO: Session Storage (in Data Tier)
+         To the top of this box
+   
+   LABEL: "Track Sessions"
+   
+   DIRECTION: Bidirectional
+   
+   What this shows: User sessions are tracked and managed
+
+
+CONNECTION #8: Diagnosis Logic → Session Storage
+------------------------------------------------------------------------------
+
+   FROM: Diagnosis Logic (in Logic Tier)
+         From the bottom of this module
+   
+   TO: Session Storage (in Data Tier)
+         To the top of this box
+   
+   LABEL: "Log Diagnosis Events"
+   
+   DIRECTION: Downward
+   
+   What this shows: Diagnosis events are logged for tracking
+
+
+================================================================================
+                    PART 3: DRAWING ORDER (STEP-BY-STEP)
+================================================================================
+
+Follow this exact order:
+
+
+STEP 1: Draw the 4 Data Tier boxes
+------------------------------------------------------------------------------
+
+   a) Draw File Storage box (left)
+   b) Draw Model Storage box (left-center)
+   c) Draw Cache Storage box (right-center)
+   d) Draw Session Storage box (right)
+   
+   Make sure they are evenly spaced and aligned horizontally.
+
+
+STEP 2: Draw the main storage connections (3 arrows)
+------------------------------------------------------------------------------
+
+   These show where data is stored:
+   
+   a) Request Processing → File Storage (bidirectional)
+   b) Report Generation → File Storage (downward)
+   c) ML Inference → Model Storage (upward, dashed)
+   
+   Now you can see the main storage flow!
+
+
+STEP 3: Draw the cache connections (2 arrows)
+------------------------------------------------------------------------------
+
+   These show what gets cached:
+   
+   a) ML Inference → Cache Storage (bidirectional)
+   b) State Management → Cache Storage (bidirectional)
+   
+   Now you can see the caching layer!
+
+
+STEP 4: Draw the session tracking connections (2 arrows)
+------------------------------------------------------------------------------
+
+   These show session management:
+   
+   a) State Management → Session Storage (bidirectional)
+   b) Diagnosis Logic → Session Storage (downward)
+   
+   Now you can see the tracking layer!
+
+
+STEP 5: Add the data loading connection (1 arrow)
+------------------------------------------------------------------------------
+
+   This shows data retrieval:
+   
+   a) Signal Processing → File Storage (upward, dashed)
+   
+   Complete! All 8 connections are drawn!
+
+
+================================================================================
+                    PART 4: HOW TO DRAW IN DRAW.IO
+================================================================================
+
+DRAWING A DATA TIER BOX:
+------------------------------------------------------------------------------
+
+1. Select Rectangle tool
+
+2. Draw rectangle (300px × 80px)
+
+3. Format:
+   - Fill color: Light shade (blue, purple, orange, or green)
+   - Border: 3px
+   - Border color: Darker shade
+
+4. Add title:
+   - Double-click box
+   - Type name (e.g., "File Storage")
+   - Format: Bold, 16pt, centered
+
+
+DRAWING A CONNECTION ARROW:
+------------------------------------------------------------------------------
+
+1. Click Connector tool
+
+2. Click bottom edge of Logic Tier module
+
+3. Click top edge of Data Tier box
+
+4. Format arrow:
+   - Width: 3pt
+   - Color: Blue (#2196F3)
+   - End Arrow: Classic, Size 7
+   - Pattern: Solid
+
+5. For bidirectional arrows:
+   - Also set Start Arrow: Classic, Size 7
+
+6. For return flows (dashed):
+   - Set Pattern: Dashed
+
+7. Add label:
+   - Double-click arrow
+   - Type label text
+   - Format: Bold, 11pt
+
+
+MAKING ARROWS LOOK CLEAN:
+------------------------------------------------------------------------------
+
+1. Keep arrows vertical (straight down from Logic to Data)
+
+2. Avoid crossing arrows:
+   - Group related connections together
+   - Use slight curves if needed
+
+3. Align connection points:
+   - Arrows should come from bottom center of Logic modules
+   - Arrows should go to top center of Data boxes
+
+4. Consistent spacing:
+   - Keep parallel arrows evenly spaced
+
+
+================================================================================
+                    PART 5: ARROW TYPES EXPLAINED
+================================================================================
+
+DOWNWARD ARROWS (Solid, pointing down):
+   - Logic Tier sends data to Data Tier
+   - Examples: Storing files, saving reports, logging events
+   - Color: Blue
+   - Style: Solid
+
+UPWARD ARROWS (Dashed, pointing up):
+   - Data Tier returns data to Logic Tier
+   - Examples: Loading files, loading models
+   - Color: Blue
+   - Style: Dashed
+
+BIDIRECTIONAL ARROWS (Arrows on both ends):
+   - Data flows both ways
+   - Examples: Cache operations, session management
+   - Color: Blue
+   - Style: Solid
+   - Both ends have arrows
+
+
+================================================================================
+                    PART 6: COMPLETE ARROW SUMMARY
+================================================================================
+
+TOTAL: 8 CONNECTION ARROWS
+
+Storage Connections (3 arrows):
+   1. Request Processing ↔ File Storage (bidirectional)
+   2. Signal Processing ← File Storage (upward, dashed)
+   3. Report Generation → File Storage (downward)
+
+Model Connection (1 arrow):
+   4. ML Inference ← Model Storage (upward, dashed)
+
+Cache Connections (2 arrows):
+   5. ML Inference ↔ Cache Storage (bidirectional)
+   6. State Management ↔ Cache Storage (bidirectional)
+
+Session Connections (2 arrows):
+   7. State Management ↔ Session Storage (bidirectional)
+   8. Diagnosis Logic → Session Storage (downward)
+
+
+================================================================================
+                    PART 7: FINAL CHECKLIST
+================================================================================
+
+DATA TIER BOXES:
+[ ] File Storage box drawn (blue)
+[ ] Model Storage box drawn (purple)
+[ ] Cache Storage box drawn (orange)
+[ ] Session Storage box drawn (green)
+[ ] All boxes same height (80px)
+[ ] All boxes evenly spaced
+[ ] All boxes aligned horizontally
+
+CONNECTION ARROWS:
+[ ] Request Processing ↔ File Storage
+[ ] Signal Processing ← File Storage (dashed)
+[ ] Report Generation → File Storage
+[ ] ML Inference ← Model Storage (dashed)
+[ ] ML Inference ↔ Cache Storage
+[ ] State Management ↔ Cache Storage
+[ ] State Management ↔ Session Storage
+[ ] Diagnosis Logic → Session Storage
+
+ARROW FORMATTING:
+[ ] All arrows are blue
+[ ] All arrows are 3pt width
+[ ] Bidirectional arrows have arrows on both ends
+[ ] Return flows are dashed
+[ ] All arrows have labels
+[ ] Labels are readable
+
+VISUAL QUALITY:
+[ ] Data Tier positioned below Logic Tier
+[ ] 100px gap between tiers
+[ ] Arrows are mostly vertical
+[ ] No unnecessary crossings
+[ ] Clean, professional appearance
+
+
+================================================================================
+                    PART 8: THE COMPLETE PICTURE
+================================================================================
+
+When you finish, your diagram will show:
+
+LOGIC TIER (Top):
+   - 9 modules processing data
+   - 41 internal arrows showing workflow
+
+CONNECTION LAYER (Middle):
+   - 8 blue arrows showing tier communication
+   - Clear data flow up and down
+
+DATA TIER (Bottom):
+   - 4 simple storage boxes
+   - No complex internal details
+   - Clean and easy to understand
+
+THE FLOW:
+   1. User uploads ECG → Request Processing
+   2. Request Processing stores file → File Storage
+   3. Signal Processing loads file ← File Storage
+   4. ML Inference loads model ← Model Storage
+   5. ML Inference caches results ↔ Cache Storage
+   6. Report Generation saves PDF → File Storage
+   7. State Management tracks session ↔ Session Storage
+   8. Diagnosis Logic logs events → Session Storage
+
+SIMPLE, CLEAN, PROFESSIONAL! ✨
+
+
+================================================================================
+                            YOU'RE READY!
+================================================================================
+
+This simplified approach gives you:
+   ✅ Clean 3-tier architecture
+   ✅ Only 8 connection arrows (easy to draw!)
+   ✅ No complex internal flows
+   ✅ Professional appearance
+   ✅ Easy to understand
+
+Total time to draw: 15-20 minutes
+
+Follow the steps in order and you'll have a beautiful, simple connection 
+between Logic Tier and Data Tier!
+
+Good luck! 🎨
+
+================================================================================

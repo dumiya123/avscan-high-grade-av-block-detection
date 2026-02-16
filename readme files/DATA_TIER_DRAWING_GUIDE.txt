@@ -1,0 +1,814 @@
+================================================================================
+                    DATA TIER ARCHITECTURE DRAWING GUIDE
+        Complete Step-by-Step Guide with Logic Tier Connection
+================================================================================
+
+This guide shows you how to draw the Data Tier and connect it beautifully 
+with your Logic Tier diagram. The data will flow like a river between the 
+two tiers!
+
+
+================================================================================
+                         PART 1: UNDERSTANDING THE DATA TIER
+================================================================================
+
+WHAT IS THE DATA TIER?
+
+The Data Tier is where all data is stored and managed. Think of it as the 
+"warehouse" and "library" of your system.
+
+It has 4 main storage areas:
+1. File System Storage (for ECG files and reports)
+2. Model Storage (for AI models)
+3. Cache Layer (for fast access)
+4. Session Storage (for tracking requests)
+
+
+THE BIG PICTURE:
+
+    LOGIC TIER (What you already drew)
+           ↕
+    CONNECTION LAYER (We'll draw this)
+           ↕
+    DATA TIER (We'll draw this now)
+
+
+================================================================================
+                    PART 2: LAYOUT AND POSITIONING
+================================================================================
+
+WHERE TO DRAW THE DATA TIER:
+
+Position: BELOW your Logic Tier diagram
+Gap: Leave 100-150 pixels space between Logic Tier and Data Tier
+Width: Same width as your Logic Tier
+Alignment: Center-aligned with Logic Tier
+
+
+RECOMMENDED LAYOUT:
+
+┌─────────────────────────────────────────────────────────────┐
+│                     LOGIC TIER                               │
+│  (Your existing diagram with all 9 modules)                 │
+└─────────────────────────────────────────────────────────────┘
+                            ↕
+                   (Connection arrows)
+                            ↕
+┌─────────────────────────────────────────────────────────────┐
+│                     DATA TIER                                │
+│  (We'll draw this now)                                      │
+└─────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                    PART 3: DRAWING THE DATA TIER MODULES
+================================================================================
+
+You will draw 4 main modules in the Data Tier:
+
+
+MODULE 1: FILE SYSTEM STORAGE (Left Side)
+------------------------------------------------------------------------------
+
+POSITION: Bottom-left area
+SIZE: Width = 280px, Height = 200px
+COLOR: Light Blue (#E3F2FD)
+BORDER: 3px, Blue (#2196F3)
+TITLE: "File System Storage"
+
+COMPONENTS INSIDE (draw these as smaller boxes):
+
+1. Temp File Manager
+   - Size: 240px × 40px
+   - Color: White
+   - Border: 1px, Dark Blue
+   - Position: Top of module
+
+2. ECG File Repository
+   - Size: 240px × 40px
+   - Color: White
+   - Border: 1px, Dark Blue
+   - Position: Middle
+
+3. Report Storage
+   - Size: 240px × 40px
+   - Color: White
+   - Border: 1px, Dark Blue
+   - Position: Bottom
+
+
+MODULE 2: MODEL STORAGE (Left-Center)
+------------------------------------------------------------------------------
+
+POSITION: Bottom-left-center area
+SIZE: Width = 280px, Height = 200px
+COLOR: Light Purple (#F3E5F5)
+BORDER: 3px, Purple (#9C27B0)
+TITLE: "Model Storage"
+
+COMPONENTS INSIDE:
+
+1. Model Repository
+   - Size: 240px × 40px
+   - Color: White
+   - Border: 1px, Dark Purple
+   - Position: Top
+
+2. Checkpoint Manager
+   - Size: 240px × 40px
+   - Color: White
+   - Border: 1px, Dark Purple
+   - Position: Middle
+
+3. Version Controller
+   - Size: 240px × 40px
+   - Color: White
+   - Border: 1px, Dark Purple
+   - Position: Bottom
+
+
+MODULE 3: CACHE LAYER (Right-Center)
+------------------------------------------------------------------------------
+
+POSITION: Bottom-right-center area
+SIZE: Width = 280px, Height = 200px
+COLOR: Light Orange (#FFF3E0)
+BORDER: 3px, Orange (#FF9800)
+TITLE: "Cache Layer"
+
+COMPONENTS INSIDE:
+
+1. Redis Cache
+   - Size: 240px × 40px
+   - Color: White
+   - Border: 1px, Dark Orange
+   - Position: Top
+
+2. Model Cache
+   - Size: 240px × 40px
+   - Color: White
+   - Border: 1px, Dark Orange
+   - Position: Middle
+
+3. Result Cache
+   - Size: 240px × 40px
+   - Color: White
+   - Border: 1px, Dark Orange
+   - Position: Bottom
+
+
+MODULE 4: SESSION STORAGE (Right Side)
+------------------------------------------------------------------------------
+
+POSITION: Bottom-right area
+SIZE: Width = 280px, Height = 200px
+COLOR: Light Green (#E8F5E9)
+BORDER: 3px, Green (#4CAF50)
+TITLE: "Session Storage"
+
+COMPONENTS INSIDE:
+
+1. Session Manager
+   - Size: 240px × 40px
+   - Color: White
+   - Border: 1px, Dark Green
+   - Position: Top
+
+2. Request Tracker
+   - Size: 240px × 40px
+   - Color: White
+   - Border: 1px, Dark Green
+   - Position: Middle
+
+3. Error Logger
+   - Size: 240px × 40px
+   - Color: White
+   - Border: 1px, Dark Green
+   - Position: Bottom
+
+
+================================================================================
+            PART 4: DRAWING INTERNAL ARROWS (WITHIN DATA TIER)
+================================================================================
+
+Now draw arrows INSIDE the Data Tier to show how data flows between storage 
+components.
+
+ARROW STYLE FOR DATA TIER:
+- Color: Dark Gray (#666666)
+- Width: 2pt
+- Style: Solid
+
+
+INTERNAL FLOW SET 1: FILE SYSTEM STORAGE (3 arrows)
+------------------------------------------------------------------------------
+
+Arrow #1:
+   FROM: Temp File Manager
+   TO: ECG File Repository
+   LABEL: "Move to Permanent"
+   
+   Temporary files are moved to permanent storage.
+
+Arrow #2:
+   FROM: ECG File Repository
+   TO: Report Storage
+   LABEL: "Link ECG to Report"
+   
+   ECG files are linked with their reports.
+
+
+INTERNAL FLOW SET 2: MODEL STORAGE (2 arrows)
+------------------------------------------------------------------------------
+
+Arrow #3:
+   FROM: Model Repository
+   TO: Checkpoint Manager
+   LABEL: "Load Checkpoint"
+   
+   Model checkpoints are loaded from repository.
+
+Arrow #4:
+   FROM: Checkpoint Manager
+   TO: Version Controller
+   LABEL: "Version Info"
+   
+   Version information is tracked.
+
+
+INTERNAL FLOW SET 3: CACHE LAYER (2 arrows)
+------------------------------------------------------------------------------
+
+Arrow #5:
+   FROM: Redis Cache
+   TO: Model Cache
+   LABEL: "Cache Model"
+   
+   Models are cached in Redis.
+
+Arrow #6:
+   FROM: Model Cache
+   TO: Result Cache
+   LABEL: "Cache Results"
+   
+   Results are cached for quick access.
+
+
+INTERNAL FLOW SET 4: SESSION STORAGE (2 arrows)
+------------------------------------------------------------------------------
+
+Arrow #7:
+   FROM: Session Manager
+   TO: Request Tracker
+   LABEL: "Track Request"
+   
+   Sessions are tracked throughout processing.
+
+Arrow #8:
+   FROM: Request Tracker
+   TO: Error Logger
+   LABEL: "Log Errors"
+   
+   Errors are logged for debugging.
+
+
+INTERNAL FLOW SET 5: CROSS-MODULE CONNECTIONS (4 arrows)
+------------------------------------------------------------------------------
+
+Arrow #9:
+   FROM: Model Repository (in Model Storage)
+   TO: Model Cache (in Cache Layer)
+   LABEL: "Cache Model"
+   COLOR: Orange
+   WIDTH: 2.5pt
+   
+   Models flow from storage to cache.
+
+Arrow #10:
+   FROM: ECG File Repository (in File System)
+   TO: Redis Cache (in Cache Layer)
+   LABEL: "Cache File Path"
+   COLOR: Orange
+   WIDTH: 2.5pt
+   
+   File paths are cached for quick access.
+
+Arrow #11:
+   FROM: Session Manager (in Session Storage)
+   TO: Redis Cache (in Cache Layer)
+   LABEL: "Cache Session"
+   COLOR: Orange
+   WIDTH: 2.5pt
+   
+   Session data is cached.
+
+Arrow #12:
+   FROM: Report Storage (in File System)
+   TO: Result Cache (in Cache Layer)
+   LABEL: "Cache Report ID"
+   COLOR: Orange
+   WIDTH: 2.5pt
+   
+   Report IDs are cached.
+
+
+================================================================================
+        PART 5: CONNECTING DATA TIER TO LOGIC TIER (THE BRIDGE!)
+================================================================================
+
+Now comes the exciting part - connecting the two tiers!
+
+ARROW STYLE FOR TIER CONNECTIONS:
+- Color: Blue (#2196F3)
+- Width: 4pt (thicker to show importance!)
+- Style: Solid with large arrow heads
+- These are BIDIRECTIONAL (data flows both ways)
+
+
+CONNECTION SET 1: REQUEST PROCESSING ↔ FILE SYSTEM
+------------------------------------------------------------------------------
+
+Connection #1 (Downward):
+   FROM: Temp Storage Manager (in Request Processing - Logic Tier)
+   TO: Temp File Manager (in File System Storage - Data Tier)
+   LABEL: "Store Uploaded File"
+   COLOR: Blue
+   WIDTH: 4pt
+   ARROW: Down
+   
+   Uploaded files flow down to storage.
+
+Connection #2 (Upward):
+   FROM: Temp File Manager (in File System Storage - Data Tier)
+   TO: Temp Storage Manager (in Request Processing - Logic Tier)
+   LABEL: "File Path"
+   COLOR: Blue
+   WIDTH: 4pt
+   ARROW: Up
+   STYLE: Dashed (return flow)
+   
+   File path flows back up to Logic Tier.
+
+
+CONNECTION SET 2: SIGNAL PROCESSING ↔ FILE SYSTEM
+------------------------------------------------------------------------------
+
+Connection #3 (Downward):
+   FROM: ECG Signal Loader (in Signal Processing - Logic Tier)
+   TO: ECG File Repository (in File System Storage - Data Tier)
+   LABEL: "Load ECG File"
+   COLOR: Blue
+   WIDTH: 4pt
+   ARROW: Down
+   
+   Request to load ECG file.
+
+Connection #4 (Upward):
+   FROM: ECG File Repository (in File System Storage - Data Tier)
+   TO: ECG Signal Loader (in Signal Processing - Logic Tier)
+   LABEL: "ECG Array Data"
+   COLOR: Blue
+   WIDTH: 4pt
+   ARROW: Up
+   STYLE: Dashed
+   
+   ECG data flows back up.
+
+
+CONNECTION SET 3: ML INFERENCE ↔ MODEL STORAGE
+------------------------------------------------------------------------------
+
+Connection #5 (Downward):
+   FROM: Model Checkpoint Loader (in ML Inference Engine - Logic Tier)
+   TO: Model Repository (in Model Storage - Data Tier)
+   LABEL: "Request Model"
+   COLOR: Blue
+   WIDTH: 4pt
+   ARROW: Down
+   
+   Request AI model.
+
+Connection #6 (Upward):
+   FROM: Model Repository (in Model Storage - Data Tier)
+   TO: Model Checkpoint Loader (in ML Inference Engine - Logic Tier)
+   LABEL: "Model Weights"
+   COLOR: Blue
+   WIDTH: 4pt
+   ARROW: Up
+   STYLE: Dashed
+   
+   Model weights flow back up.
+
+
+CONNECTION SET 4: ML INFERENCE ↔ CACHE LAYER
+------------------------------------------------------------------------------
+
+Connection #7 (Bidirectional):
+   FROM: AV Block Predictor (in ML Inference Engine - Logic Tier)
+   TO: Model Cache (in Cache Layer - Data Tier)
+   LABEL: "Check Cache / Store Result"
+   COLOR: Blue
+   WIDTH: 4pt
+   ARROW: Both directions
+   
+   Check if model is cached, or cache new results.
+
+
+CONNECTION SET 5: REPORT GENERATION ↔ FILE SYSTEM
+------------------------------------------------------------------------------
+
+Connection #8 (Downward):
+   FROM: PDF Generator (in Report Generation - Logic Tier)
+   TO: Report Storage (in File System Storage - Data Tier)
+   LABEL: "Save PDF Report"
+   COLOR: Blue
+   WIDTH: 4pt
+   ARROW: Down
+   
+   Save generated PDF.
+
+Connection #9 (Upward):
+   FROM: Report Storage (in File System Storage - Data Tier)
+   TO: Report Storage Manager (in Report Generation - Logic Tier)
+   LABEL: "Report ID & URL"
+   COLOR: Blue
+   WIDTH: 4pt
+   ARROW: Up
+   STYLE: Dashed
+   
+   Report ID flows back up.
+
+
+CONNECTION SET 6: STATE MANAGEMENT ↔ SESSION STORAGE
+------------------------------------------------------------------------------
+
+Connection #10 (Bidirectional):
+   FROM: Session Manager (in State Management - Logic Tier)
+   TO: Session Manager (in Session Storage - Data Tier)
+   LABEL: "Session CRUD Operations"
+   COLOR: Blue
+   WIDTH: 4pt
+   ARROW: Both directions
+   
+   Create, read, update, delete sessions.
+
+Connection #11 (Bidirectional):
+   FROM: Error Handler (in State Management - Logic Tier)
+   TO: Error Logger (in Session Storage - Data Tier)
+   LABEL: "Log Errors"
+   COLOR: Blue
+   WIDTH: 4pt
+   ARROW: Both directions
+   
+   Log and retrieve error information.
+
+
+CONNECTION SET 7: STATE MANAGEMENT ↔ CACHE LAYER
+------------------------------------------------------------------------------
+
+Connection #12 (Bidirectional):
+   FROM: Model Cache (in State Management - Logic Tier)
+   TO: Redis Cache (in Cache Layer - Data Tier)
+   LABEL: "Cache Operations"
+   COLOR: Blue
+   WIDTH: 4pt
+   ARROW: Both directions
+   
+   All cache operations flow through here.
+
+
+================================================================================
+                    PART 6: DRAWING ORDER FOR BEAUTIFUL FLOW
+================================================================================
+
+Follow this exact order to create a beautiful, flowing diagram:
+
+
+PHASE 1: Draw the Data Tier Modules (4 modules)
+------------------------------------------------------------------------------
+
+Step 1: Draw File System Storage module (left)
+   - Draw the outer box
+   - Add title "File System Storage"
+   - Draw 3 internal components
+
+Step 2: Draw Model Storage module (left-center)
+   - Draw the outer box
+   - Add title "Model Storage"
+   - Draw 3 internal components
+
+Step 3: Draw Cache Layer module (right-center)
+   - Draw the outer box
+   - Add title "Cache Layer"
+   - Draw 3 internal components
+
+Step 4: Draw Session Storage module (right)
+   - Draw the outer box
+   - Add title "Session Storage"
+   - Draw 3 internal components
+
+Now you have all 4 Data Tier modules!
+
+
+PHASE 2: Draw Internal Data Tier Arrows (12 arrows)
+------------------------------------------------------------------------------
+
+Step 5: File System internal flows (2 arrows)
+   - Temp → ECG Repository
+   - ECG Repository → Report Storage
+
+Step 6: Model Storage internal flows (2 arrows)
+   - Repository → Checkpoint Manager
+   - Checkpoint → Version Controller
+
+Step 7: Cache Layer internal flows (2 arrows)
+   - Redis → Model Cache
+   - Model Cache → Result Cache
+
+Step 8: Session Storage internal flows (2 arrows)
+   - Session Manager → Request Tracker
+   - Request Tracker → Error Logger
+
+Step 9: Cross-module Data Tier flows (4 arrows)
+   - Model Repository → Model Cache
+   - ECG Repository → Redis Cache
+   - Session Manager → Redis Cache
+   - Report Storage → Result Cache
+
+Now the Data Tier is internally connected!
+
+
+PHASE 3: Draw the Bridge (12 connection arrows)
+------------------------------------------------------------------------------
+
+This is the most important part - connecting Logic Tier to Data Tier!
+
+Step 10: File System connections (4 arrows)
+   - Request Processing → Temp File Manager (down)
+   - Temp File Manager → Request Processing (up, dashed)
+   - Signal Processing → ECG Repository (down)
+   - ECG Repository → Signal Processing (up, dashed)
+
+Step 11: Model Storage connections (2 arrows)
+   - ML Inference → Model Repository (down)
+   - Model Repository → ML Inference (up, dashed)
+
+Step 12: Cache connections (2 arrows)
+   - ML Inference ↔ Model Cache (bidirectional)
+   - State Management ↔ Redis Cache (bidirectional)
+
+Step 13: Report Storage connections (2 arrows)
+   - Report Generation → Report Storage (down)
+   - Report Storage → Report Generation (up, dashed)
+
+Step 14: Session connections (2 arrows)
+   - State Management ↔ Session Manager (bidirectional)
+   - State Management ↔ Error Logger (bidirectional)
+
+Now the two tiers are beautifully connected!
+
+
+================================================================================
+                    PART 7: HOW TO DRAW IN DRAW.IO
+================================================================================
+
+DRAWING A DATA TIER MODULE:
+------------------------------------------------------------------------------
+
+1. Select "Rectangle" tool
+
+2. Draw a large rectangle (280px × 200px)
+
+3. Format the rectangle:
+   - Right panel → Fill Color: Choose from palette
+     (Blue for File System, Purple for Model, Orange for Cache, Green for Session)
+   - Border: 3px
+   - Border Color: Darker shade of fill color
+
+4. Add title:
+   - Double-click rectangle
+   - Type module name
+   - Format: Bold, 14pt, centered at top
+
+5. Draw internal components:
+   - Draw smaller rectangles inside (240px × 40px)
+   - Fill: White
+   - Border: 1px, dark color
+   - Add component names
+
+
+DRAWING INTERNAL DATA TIER ARROWS:
+------------------------------------------------------------------------------
+
+1. Click "Connector" tool
+
+2. Click source component, then destination component
+
+3. Format arrow:
+   - Width: 2pt
+   - Color: Dark Gray (#666666)
+   - End Arrow: Classic
+   - Pattern: Solid
+
+4. Add label by double-clicking arrow
+
+
+DRAWING TIER CONNECTION ARROWS (THE BRIDGE):
+------------------------------------------------------------------------------
+
+1. Click "Connector" tool
+
+2. Click component in Logic Tier (above)
+
+3. Click component in Data Tier (below)
+
+4. Format arrow:
+   - Width: 4pt (THICKER!)
+   - Color: Blue (#2196F3)
+   - End Arrow: Classic, Size 8
+   - Pattern: Solid (for downward) or Dashed (for upward return)
+
+5. For bidirectional arrows:
+   - Draw the arrow
+   - In right panel, set "Start Arrow" to Classic also
+   - Now it has arrows on both ends!
+
+6. Add label:
+   - Double-click arrow
+   - Type label
+   - Format: Bold, 11pt, Blue color
+
+
+MAKING ARROWS LOOK BEAUTIFUL:
+------------------------------------------------------------------------------
+
+1. Avoid crossing arrows:
+   - Click arrow
+   - Drag the middle to create curves
+   - Use waypoints for complex paths
+
+2. Align connection points:
+   - Arrows from Logic Tier should come from bottom of boxes
+   - Arrows to Data Tier should go to top of boxes
+   - This creates a clean vertical flow
+
+3. Consistent spacing:
+   - Keep similar arrows parallel
+   - Maintain equal spacing between parallel arrows
+
+4. Label placement:
+   - Place labels on the side of arrows
+   - Avoid overlapping labels
+
+
+================================================================================
+                    PART 8: VISUAL ENHANCEMENT TIPS
+================================================================================
+
+MAKING THE DIAGRAM IMPRESSIVE:
+
+1. COLOR CODING:
+   - File System: Blue (represents files and documents)
+   - Model Storage: Purple (represents AI/intelligence)
+   - Cache Layer: Orange (represents speed/performance)
+   - Session Storage: Green (represents active/live data)
+   - Connection arrows: Blue (represents data flow)
+
+2. VISUAL HIERARCHY:
+   - Tier connection arrows (4pt) are thickest = most important
+   - Cross-module arrows (2.5pt) are medium = important
+   - Internal arrows (2pt) are thinnest = details
+
+3. FLOW DIRECTION:
+   - Downward arrows (solid) = Data going to storage
+   - Upward arrows (dashed) = Data returning from storage
+   - Bidirectional arrows = Active communication
+
+4. GROUPING:
+   - Use background rectangles to group related modules
+   - Add a light gray background behind entire Data Tier
+   - This separates it visually from Logic Tier
+
+5. ANNOTATIONS:
+   - Add a text box: "DATA TIER" at the top
+   - Add a text box: "LOGIC TIER" above your existing diagram
+   - Use large, bold font (18pt)
+
+
+================================================================================
+                    PART 9: COMPLETE ARROW SUMMARY
+================================================================================
+
+TOTAL ARROWS TO DRAW:
+
+Internal Data Tier Arrows: 12 arrows
+   - File System: 2 arrows
+   - Model Storage: 2 arrows
+   - Cache Layer: 2 arrows
+   - Session Storage: 2 arrows
+   - Cross-module: 4 arrows
+
+Tier Connection Arrows: 12 arrows
+   - File System connections: 4 arrows
+   - Model Storage connections: 2 arrows
+   - Cache connections: 2 arrows
+   - Report connections: 2 arrows
+   - Session connections: 2 arrows
+
+GRAND TOTAL: 24 arrows in Data Tier + 12 bridge arrows = 36 NEW ARROWS
+
+Combined with Logic Tier (41 arrows), your complete diagram will have:
+TOTAL SYSTEM ARROWS: 77 arrows!
+
+
+================================================================================
+                    PART 10: FINAL CHECKLIST
+================================================================================
+
+DATA TIER MODULES:
+[ ] File System Storage module drawn with 3 components
+[ ] Model Storage module drawn with 3 components
+[ ] Cache Layer module drawn with 3 components
+[ ] Session Storage module drawn with 3 components
+[ ] All modules properly colored and labeled
+
+INTERNAL DATA TIER ARROWS:
+[ ] 2 arrows in File System Storage
+[ ] 2 arrows in Model Storage
+[ ] 2 arrows in Cache Layer
+[ ] 2 arrows in Session Storage
+[ ] 4 cross-module arrows
+[ ] All arrows have labels
+
+TIER CONNECTION ARROWS (THE BRIDGE):
+[ ] 4 File System connection arrows (2 down, 2 up)
+[ ] 2 Model Storage connection arrows (1 down, 1 up)
+[ ] 2 Cache connection arrows (bidirectional)
+[ ] 2 Report connection arrows (1 down, 1 up)
+[ ] 2 Session connection arrows (bidirectional)
+[ ] All connection arrows are blue and 4pt thick
+[ ] Upward arrows are dashed
+[ ] Bidirectional arrows have arrows on both ends
+
+VISUAL QUALITY:
+[ ] Data Tier is positioned below Logic Tier
+[ ] Proper spacing between tiers (100-150px)
+[ ] Connection arrows flow vertically and smoothly
+[ ] No unnecessary arrow crossings
+[ ] Consistent color coding
+[ ] All labels are readable
+[ ] Professional appearance
+
+
+================================================================================
+                    PART 11: THE COMPLETE PICTURE
+================================================================================
+
+When you finish, your complete 3-tier architecture will show:
+
+TOP SECTION: LOGIC TIER
+   - 9 main modules
+   - 41 arrows showing processing flow
+   - Data flowing like a river through the system
+
+MIDDLE SECTION: THE BRIDGE
+   - 12 blue connection arrows
+   - Showing data flowing up and down between tiers
+   - Clear bidirectional communication
+
+BOTTOM SECTION: DATA TIER
+   - 4 storage modules
+   - 12 internal arrows
+   - Showing how data is stored and cached
+
+THE COMPLETE FLOW:
+   User uploads ECG
+      ↓
+   Logic Tier processes it
+      ↓
+   Data Tier stores results
+      ↓
+   Logic Tier retrieves stored data
+      ↓
+   User receives diagnosis
+
+This creates a COMPLETE, PROFESSIONAL, 3-TIER ARCHITECTURE DIAGRAM!
+
+
+================================================================================
+                            YOU'RE READY!
+================================================================================
+
+Follow this guide step by step:
+1. Draw Data Tier modules (Phase 1)
+2. Add internal arrows (Phase 2)
+3. Connect to Logic Tier (Phase 3)
+
+Your diagram will be IMPRESSIVE and show the complete system architecture!
+
+The data will flow beautifully like a river from Logic Tier down to Data Tier 
+and back up again!
+
+Good luck! 🎨🚀
+
+================================================================================

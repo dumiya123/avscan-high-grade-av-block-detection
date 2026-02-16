@@ -1,0 +1,314 @@
+================================================================================
+              SIMPLE ML MODEL ARCHITECTURE - QUICK GUIDE
+                  For PowerPoint Presentation (Under 2 Hours)
+================================================================================
+
+TOTAL TO DRAW: 11 boxes + 14 arrows = Done in 1-2 hours!
+
+
+================================================================================
+                    STEP 1: DRAW THE 11 BOXES
+================================================================================
+
+Draw these boxes from LEFT to RIGHT:
+
+
+BOX 1: ECG INPUT (Far Left)
+   Size: 150px × 70px
+   Color: Light Green
+   Border: 2px
+   Text: "ECG Input\n(1, 5000)"
+
+
+BOX 2: PREPROCESSING (Left)
+   Size: 150px × 70px
+   Color: Light Blue
+   Border: 2px
+   Text: "Preprocessing\nFilter + Normalize"
+
+
+BOX 3: ENCODER (Left-Center)
+   Size: 180px × 250px (TALL box)
+   Color: Light Purple
+   Border: 3px
+   Text at top: "ENCODER"
+   
+   Inside, write (no separate boxes):
+   - Block 1: 64 channels
+   - Block 2: 128 channels
+   - Block 3: 256 channels
+   - Block 4: 512 channels
+
+
+BOX 4: BOTTLENECK (Center)
+   Size: 200px × 100px
+   Color: Light Orange
+   Border: 4px (THICK!)
+   Text: "BOTTLENECK\n1024 channels\n+ ATTENTION"
+
+
+BOX 5: DECODER (Right-Center)
+   Size: 180px × 250px (TALL box)
+   Color: Light Teal
+   Border: 3px
+   Text at top: "DECODER"
+   
+   Inside, write:
+   - Block 4: 512 channels
+   - Block 3: 256 channels
+   - Block 2: 128 channels
+   - Block 1: 64 channels
+
+
+BOX 6: SEGMENTATION OUTPUT (Right-Top)
+   Size: 150px × 70px
+   Color: Light Pink
+   Border: 2px
+   Text: "Segmentation\n(5, 5000)"
+
+
+BOX 7: CLASSIFICATION OUTPUT (Right-Bottom)
+   Size: 150px × 70px
+   Color: Light Pink
+   Border: 2px
+   Text: "Classification\n(5 classes)"
+
+
+BOX 8: WAVE EXTRACTION (Far Right-Top)
+   Size: 140px × 60px
+   Color: Light Cyan
+   Border: 2px
+   Text: "Wave Extraction"
+
+
+BOX 9: INTERVAL CALC (Far Right-Middle)
+   Size: 140px × 60px
+   Color: Light Cyan
+   Border: 2px
+   Text: "Interval Calc"
+
+
+BOX 10: CLINICAL RULES (Far Right-Bottom)
+   Size: 140px × 60px
+   Color: Light Cyan
+   Border: 2px
+   Text: "Clinical Rules"
+
+
+BOX 11: FINAL DIAGNOSIS (Rightmost)
+   Size: 150px × 70px
+   Color: Light Green
+   Border: 2px
+   Text: "Final Diagnosis\n+ Confidence"
+
+
+LAYOUT VIEW:
+
+[Input] → [Preproc] → [ENCODER] → [BOTTLENECK] → [DECODER] → [Seg Out] → [Wave] → [Interval] → [Rules] → [Diagnosis]
+                          ↓                           ↓
+                          └───────────────────────────┘
+                               Skip Connections        [Class Out] ────────────────┘
+
+
+================================================================================
+                    STEP 2: DRAW THE 14 ARROWS IN ORDER
+================================================================================
+
+MAIN FLOW ARROWS (Black, 2pt):
+
+
+Arrow #1: Input to Preprocessing
+   FROM: ECG Input
+   TO: Preprocessing
+   LABEL: "Raw Signal"
+
+
+Arrow #2: Preprocessing to Encoder
+   FROM: Preprocessing
+   TO: Encoder (top)
+   LABEL: "Clean Signal"
+
+
+Arrow #3: Encoder to Bottleneck
+   FROM: Encoder (bottom)
+   TO: Bottleneck
+   LABEL: "Features"
+
+
+Arrow #4: Bottleneck to Decoder
+   FROM: Bottleneck
+   TO: Decoder (bottom)
+   LABEL: "Attention Features"
+
+
+Arrow #5: Decoder to Segmentation
+   FROM: Decoder (top)
+   TO: Segmentation Output
+   LABEL: "Pixel-level"
+
+
+Arrow #6: Bottleneck to Classification
+   FROM: Bottleneck
+   TO: Classification Output
+   LABEL: "Global Features"
+
+
+Arrow #7: Segmentation to Wave Extraction
+   FROM: Segmentation Output
+   TO: Wave Extraction
+   LABEL: "Seg Mask"
+
+
+Arrow #8: Wave Extraction to Interval Calc
+   FROM: Wave Extraction
+   TO: Interval Calc
+   LABEL: "Boundaries"
+
+
+Arrow #9: Interval Calc to Clinical Rules
+   FROM: Interval Calc
+   TO: Clinical Rules
+   LABEL: "PR/RR"
+
+
+Arrow #10: Classification to Clinical Rules
+   FROM: Classification Output
+   TO: Clinical Rules
+   LABEL: "NN Prediction"
+
+
+Arrow #11: Clinical Rules to Final Diagnosis
+   FROM: Clinical Rules
+   TO: Final Diagnosis
+   LABEL: "Validated"
+
+
+SKIP CONNECTION ARROWS (Gray, 2pt, DASHED):
+
+
+Arrow #12: Skip Connection (Top)
+   FROM: Encoder (top area)
+   TO: Decoder (top area)
+   LABEL: "Skip 1"
+   COLOR: Gray
+   STYLE: Dashed
+
+
+Arrow #13: Skip Connection (Middle)
+   FROM: Encoder (middle area)
+   TO: Decoder (middle area)
+   LABEL: "Skip 2"
+   COLOR: Gray
+   STYLE: Dashed
+
+
+Arrow #14: Skip Connection (Bottom)
+   FROM: Encoder (bottom area)
+   TO: Decoder (bottom area)
+   LABEL: "Skip 3"
+   COLOR: Gray
+   STYLE: Dashed
+
+
+================================================================================
+                    STEP 3: DRAWING ORDER
+================================================================================
+
+PHASE 1: Draw all 11 boxes (30 minutes)
+   - Start from left (Input)
+   - End at right (Diagnosis)
+   - Make Encoder and Decoder TALL
+   - Make Bottleneck stand out (thick border, orange)
+
+
+PHASE 2: Draw main flow arrows (20 minutes)
+   - Draw arrows #1-11 in order
+   - All black, 2pt
+   - Add labels
+
+
+PHASE 3: Draw skip connections (10 minutes)
+   - Draw 3 dashed gray arrows
+   - Connect Encoder to Decoder horizontally
+
+
+PHASE 4: Add title and legend (10 minutes)
+   - Title: "U-Net Model Architecture"
+   - Legend: Solid = Main flow, Dashed = Skip connections
+
+
+TOTAL TIME: 70 minutes (1 hour 10 minutes)
+
+
+================================================================================
+                    QUICK FORMATTING GUIDE
+================================================================================
+
+BOX COLORS (Use light shades):
+   - Input/Output: Light Green (#E8F5E9)
+   - Preprocessing: Light Blue (#E3F2FD)
+   - Encoder: Light Purple (#F3E5F5)
+   - Bottleneck: Light Orange (#FFF3E0) - IMPORTANT!
+   - Decoder: Light Teal (#E0F2F1)
+   - Output Heads: Light Pink (#FCE4EC)
+   - Post-processing: Light Cyan (#E0F7FA)
+
+
+ARROW FORMATTING:
+   - Main flow: Black, 2pt, solid
+   - Skip connections: Gray (#999999), 2pt, dashed
+
+
+TEXT SIZE:
+   - Box titles: 12pt, bold
+   - Arrow labels: 10pt
+   - Diagram title: 16pt, bold
+
+
+================================================================================
+                    FINAL CHECKLIST
+================================================================================
+
+BOXES (11 total):
+[ ] ECG Input
+[ ] Preprocessing
+[ ] Encoder (tall, purple)
+[ ] Bottleneck (orange, thick border)
+[ ] Decoder (tall, teal)
+[ ] Segmentation Output
+[ ] Classification Output
+[ ] Wave Extraction
+[ ] Interval Calc
+[ ] Clinical Rules
+[ ] Final Diagnosis
+
+ARROWS (14 total):
+[ ] 11 main flow arrows (black)
+[ ] 3 skip connections (gray, dashed)
+
+VISUAL:
+[ ] Title added
+[ ] Legend added
+[ ] Colors applied
+[ ] Labels readable
+
+
+================================================================================
+                    DONE!
+================================================================================
+
+This simple diagram shows:
+✅ Complete ML pipeline
+✅ U-Net architecture (Encoder-Bottleneck-Decoder)
+✅ Skip connections (U-Net's key feature)
+✅ Multi-task outputs (Segmentation + Classification)
+✅ Post-processing steps
+✅ Final diagnosis
+
+Perfect for PowerPoint presentation!
+Time: Under 2 hours
+Boxes: 11
+Arrows: 14
+
+Good luck! 🚀
+================================================================================
