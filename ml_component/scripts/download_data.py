@@ -124,7 +124,7 @@ def download_ludb_fallback(output_path: Path, base_url: str) -> bool:
         
         # Download each record (.dat, .hea, .atr files)
         for record in tqdm(records, desc="Downloading LUDB records"):
-            for ext in ['.dat', '.hea', '.atr']:
+            for ext in ['.dat', '.hea', '.i']:
                 file_url = base_url + record + ext
                 file_path = output_path / (record + ext)
                 download_file(file_url, file_path)

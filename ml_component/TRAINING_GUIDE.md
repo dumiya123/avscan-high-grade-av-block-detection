@@ -1,359 +1,115 @@
-# Training Guide - AV Block Detection System
+# 🎓 ATRIONNET TRAINING & EVALUATION OPERATIONAL MANUAL
+**Executable Commands for Training, Inference & Visualization**
 
-This guide will help you train the model step-by-step without errors.
+🛑 **CRITICAL PRE-REQUISITE**:
+You must open your terminal in the `ml_component` folder.
+Check your path. It should end in `.../AtrionNet_Implementation/ml_component`.
 
-## Prerequisites Checklist
+If you are not sure, run:
+```powershell
+cd f:\Final_Year\Final_Semester_one\Final_Year_Research_Project\AtrionNet_Implementation\ml_component
+```
 
-Before training, ensure you have:
+---
 
-- [ ] Python 3.9+ installed
-- [ ] CUDA-capable GPU (recommended) or CPU
-- [ ] At least 10GB free disk space
-- [ ] Internet connection for dataset download
+## 🛠️ Phase 1: Environment & Data Setup
 
-## Step-by-Step Training Process
-
-### Step 1: Install Dependencies
-
-```bash
-# Navigate to project directory
-cd F:\Final_Year\Final_Semester_one\Final_Year_Research_Project\AtrionNet_Implementation
-
-# Install all required packages
+**1. Install Dependencies**
+```powershell
 pip install -r requirements.txt
 ```
 
-**Common Issues:**
-- If you get permission errors, use: `pip install --user -r requirements.txt`
-- If torch installation fails, install it separately first:
-  ```bash
-  # For CUDA 11.8
-  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-  
-  # For CPU only
-  pip install torch torchvision torchaudio
-  ```
-
-### Step 2: Download Dataset
-
-```bash
-# Download LUDB dataset (smaller, recommended for testing)
-python run.py download --datasets ludb
+**2. Download Data (LUDB + PTB-XL)**
+This script downloads raw ECG files into `data/raw/`.
+```powershell
+python scripts/manage.py download --datasets ludb ptbxl
 ```
 
-**Expected Output:**
+**3. Preprocess Data**
+Converts raw files into the Cleaned, Normalized HDF5 format (`data/processed/ecg_data.h5`) used for training.
+```powershell
+python scripts/manage.py preprocess --validate
 ```
-📥 Downloading LUDB dataset...
-✅ LUDB dataset downloaded successfully
-```
+*   *Expected Time:* ~2-5 minutes depending on disk speed.
+*   *Output:* "Saved ecg_data.h5"
 
-**Common Issues:**
-- **Network timeout**: The dataset is hosted on PhysioNet. If download fails, try again or check your internet connection
-- **Disk space**: Ensure you have at least 2GB free space
+---
 
-### Step 3: Preprocess Data
+## 🚀 Phase 2: Training the Model
 
-```bash
-# Preprocess the downloaded data
-python run.py preprocess --validate
-```
-
-**Expected Output:**
-```
-🔄 Preprocessing LUDB dataset...
-Processing record 1/200...
-...
-✅ Preprocessing complete!
-💾 Saved to data/processed/ecg_data.h5
+**Start Training (Standard Configuration):**
+```powershell
+python scripts/manage.py train --epochs 50 --batch-size 16 --lr 0.0001
 ```
 
-**Common Issues:**
-- **Missing wfdb package**: Run `pip install wfdb`
-- **Memory error**: If you have limited RAM, the script processes records one at a time, so this shouldn't happen
-- **No annotations found**: This means the LUDB download was incomplete. Re-run Step 2
+**Monitoring Progress:**
+You will see a progress bar for each epoch.
+*   **Loss:** Should go down (e.g., typically starts ~1.5 and drops to ~0.3).
+*   **Accuracy:** Should go up.
+*   *Note:* The model saves checkpoints automatically to `checkpoints/`.
 
-### Step 4: Verify Data
+---
 
-Before training, verify the preprocessed data:
+## 📊 Phase 3: Evaluation (Getting Thesis Metrics)
 
+Once training finishes (or you stop it), evaluate the best saved model.
+
+**Generate Metrics Report:**
+```powershell
+python scripts/manage.py evaluate --checkpoint checkpoints/best_model.pth --output-dir results
+```
+
+**What to look for in `results/`:**
+*   **Console Output:** Prints the Precision, Recall, and F1-Score table. **Copy this table for your thesis.**
+*   **Confusion Matrix:** A plot showing misclassifications.
+
+---
+
+## 🔥 Phase 4: Visualization (Heatmaps / XAI)
+
+To generate the "Why" (Explainable AI) visuals for your presentation.
+
+**Generate a Single Patient Report (PDF + Heatmap):**
+You need an input file. If you don't have one, use the one generated during preprocessing or a sample `.npy` file.
+
+```powershell
+python scripts/manage.py inference --checkpoint checkpoints/best_model.pth --input data/processed/sample.npy --output reports/patient_report.pdf
+```
+*(Note: Replace `data/processed/sample.npy` with a valid path to an ECG .npy file if you have specific ones. The preprocessing step might not output single .npy files by default, so you might need to write a small script to extract one from the .h5 file if you want to test individual inference.)*
+
+**Helper: Extract a Sample for Testing**
+Run this small Python snippet to get a test file if you don't have one:
 ```python
 import h5py
-from pathlib import Path
+import numpy as np
 
-data_file = Path('data/processed/ecg_data.h5')
-
-if data_file.exists():
-    with h5py.File(data_file, 'r') as hf:
-        print(f"✅ Total records: {len(hf.keys())}")
-        
-        # Check first record
-        record = hf['record_0']
-        print(f"   Signal shape: {record['signal'].shape}")
-        print(f"   Mask shape: {record['seg_mask'].shape}")
-        print(f"   AV block label: {record.attrs['av_block_label']}")
-else:
-    print("❌ Data file not found! Run preprocessing first.")
+with h5py.File('data/processed/ecg_data.h5', 'r') as f:
+    # Get first record
+    signal = f['record_0']['signal'][:]
+    np.save('test_sample.npy', signal)
+    print("Saved test_sample.npy")
+```
+Then run:
+```powershell
+python scripts/manage.py inference --checkpoint checkpoints/best_model.pth --input test_sample.npy --output reports/test_result.pdf
 ```
 
-**Expected Output:**
-```
-✅ Total records: 200
-   Signal shape: (5000,)
-   Mask shape: (5000,)
-   AV block label: 0
-```
-
-### Step 5: Start Training
-
-**Option A: Using CLI (Recommended)**
-
-```bash
-# Basic training with default parameters
-python run.py train --epochs 50 --batch-size 16
-
-# Advanced training with custom parameters
-python run.py train \
-    --epochs 100 \
-    --batch-size 32 \
-    --lr 0.0001 \
-    --seg-weight 0.6 \
-    --clf-weight 0.4
-```
-
-**Option B: Using Python Script**
-
-```python
-from src.training.train import train_model
-
-train_model(
-    data_dir='data/processed',
-    checkpoint_dir='checkpoints',
-    epochs=50,
-    batch_size=16,
-    lr=1e-4,
-    seg_weight=0.6,
-    clf_weight=0.4,
-    early_stop_patience=15
-)
-```
-
-**Option C: Using Jupyter Notebook**
-
-Open `notebooks/02_training.ipynb` and run all cells.
-
-### Step 6: Monitor Training
-
-**TensorBoard (Recommended):**
-
-```bash
-# In a separate terminal
-tensorboard --logdir=logs
-```
-
-Then open http://localhost:6006 in your browser to see:
-- Training/validation loss curves
-- Segmentation and classification metrics
-- Learning rate schedule
-
-**Console Output:**
-
-You should see output like:
-```
-🚀 Starting training for 50 epochs...
-================================================================================
-Epoch 0 [Train]: 100%|██████████| 10/10 [00:15<00:00, loss=2.3456, seg=1.8, clf=0.5]
-Epoch 0 [Val]:   100%|██████████| 3/3 [00:03<00:00, loss=2.1234, seg=1.7, clf=0.4]
-
-Epoch 0/49 - 00:18
-  Train Loss: 2.3456 (Seg: 1.8000, Clf: 0.5456)
-  Val Loss:   2.1234 (Seg: 1.7000, Clf: 0.4234)
-  LR: 0.000100
-================================================================================
-```
-
-## Common Training Errors and Solutions
-
-### Error 1: CUDA Out of Memory
-
-**Error Message:**
-```
-RuntimeError: CUDA out of memory
-```
-
-**Solutions:**
-1. Reduce batch size:
-   ```bash
-   python run.py train --batch-size 8
-   ```
-
-2. Use CPU instead (slower):
-   ```bash
-   # The code automatically detects and uses CPU if CUDA is unavailable
-   ```
-
-3. Enable gradient checkpointing (modify `src/training/train.py`):
-   ```python
-   # Add to training loop
-   torch.cuda.empty_cache()
-   ```
-
-### Error 2: Data File Not Found
-
-**Error Message:**
-```
-❌ Data file not found: data/processed/ecg_data.h5
-```
-
-**Solution:**
-Run preprocessing first:
-```bash
-python run.py preprocess --validate
-```
-
-### Error 3: Module Import Errors
-
-**Error Message:**
-```
-ModuleNotFoundError: No module named 'wfdb'
-```
-
-**Solution:**
-Install missing dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-### Error 4: Empty Dataset
-
-**Error Message:**
-```
-ValueError: Dataset is empty
-```
-
-**Solution:**
-This means preprocessing found no valid records. Check:
-1. LUDB was downloaded correctly: `ls data/raw/ludb/`
-2. Re-download the dataset: `python run.py download --datasets ludb`
-
-### Error 5: Segmentation Mask Issues
-
-**Error Message:**
-```
-RuntimeError: Expected target size [batch, seq_len], got [batch, 1, seq_len]
-```
-
-**Solution:**
-This is already handled in the code, but if you see it, check `src/data/loader.py` line 45-50.
-
-## Training Tips
-
-### 1. Start Small
-For initial testing, use fewer epochs:
-```bash
-python run.py train --epochs 10 --batch-size 8
-```
-
-### 2. Use Mixed Precision (if you have GPU)
-The code already includes this, but ensure you have a compatible GPU (NVIDIA with Tensor Cores).
-
-### 3. Monitor Overfitting
-Watch the validation loss. If it starts increasing while training loss decreases, the model is overfitting. The code has early stopping enabled by default (patience=15).
-
-### 4. Adjust Loss Weights
-If segmentation is poor:
-```bash
-python run.py train --seg-weight 0.7 --clf-weight 0.3
-```
-
-If classification is poor:
-```bash
-python run.py train --seg-weight 0.5 --clf-weight 0.5
-```
-
-## Expected Training Time
-
-| Hardware | Batch Size | Time per Epoch | Total (50 epochs) |
-|----------|------------|----------------|-------------------|
-| RTX 3090 | 32 | ~30 seconds | ~25 minutes |
-| RTX 3060 | 16 | ~1 minute | ~50 minutes |
-| CPU (i7) | 8 | ~10 minutes | ~8 hours |
-
-## After Training
-
-### 1. Check Checkpoints
-
-```bash
-ls checkpoints/
-```
-
-You should see:
-- `best_model.pth` - Best model based on validation loss
-- `checkpoint_epoch_X.pth` - Checkpoints from each epoch
-
-### 2. Evaluate Model
-
-```bash
-python run.py evaluate --checkpoint checkpoints/best_model.pth
-```
-
-### 3. Run Inference
-
-```bash
-python run.py inference \
-    --checkpoint checkpoints/best_model.pth \
-    --input sample_ecg.npy \
-    --output report.txt
-```
-
-## Troubleshooting Checklist
-
-If training fails, check:
-
-- [ ] All dependencies installed: `pip list | grep torch`
-- [ ] Data file exists: `ls data/processed/ecg_data.h5`
-- [ ] Data file is not empty: `python -c "import h5py; print(len(h5py.File('data/processed/ecg_data.h5', 'r').keys()))"`
-- [ ] GPU is available (if using): `python -c "import torch; print(torch.cuda.is_available())"`
-- [ ] Enough disk space: `df -h` (Linux/Mac) or `Get-PSDrive` (Windows)
-- [ ] Python version: `python --version` (should be 3.9+)
-
-## Quick Start (All Steps)
-
-```bash
-# 1. Install
-pip install -r requirements.txt
-
-# 2. Download data
-python run.py download --datasets ludb
-
-# 3. Preprocess
-python run.py preprocess --validate
-
-# 4. Train
-python run.py train --epochs 50 --batch-size 16
-
-# 5. Evaluate
-python run.py evaluate --checkpoint checkpoints/best_model.pth
-```
-
-## Getting Help
-
-If you encounter errors not covered here:
-
-1. Check the error message carefully
-2. Look at the stack trace to identify which file/line caused the error
-3. Check if the issue is in data loading, model architecture, or training loop
-4. Verify all file paths are correct
-5. Ensure you're in the correct directory when running commands
-
-## Success Indicators
-
-Training is successful when you see:
-
-✅ Training loss decreasing over epochs  
-✅ Validation loss decreasing (or stable)  
-✅ No CUDA out of memory errors  
-✅ Checkpoints being saved  
-✅ TensorBoard showing metrics  
-✅ `best_model.pth` created  
-
-Good luck with your training! 🚀
+---
+
+## ❓ Troubleshooting
+
+**Error: "No module named scripts"**
+*   **Solution:** You are likely in `ml_component/scripts/`. Go up one level:
+    ```powershell
+    cd ..
+    # Now run python scripts/manage.py ...
+    ```
+
+**Error: "FileNotFoundError: data/processed/ecg_data.h5"**
+*   **Solution:** You skipped Phase 1 Step 3. Run `python scripts/manage.py preprocess`.
+
+**Error: "CUDA out of memory"**
+*   **Solution:** Reduce batch size:
+    ```powershell
+    python scripts/manage.py train --batch-size 8
+    ```
