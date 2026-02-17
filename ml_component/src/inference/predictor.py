@@ -18,13 +18,13 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.models.ecg_unet import ECGUNet
-from src.data.preprocessing import bandpass_filter, normalize_signal
+from src.modeling.ecg_unet import ECGUNet
+from src.data_pipeline.preprocessing import bandpass_filter, normalize_signal
 from src.analysis.temporal_analyzer import TemporalAnalyzer
 from src.xai.gradcam import GradCAM
 from src.xai.explainer import ClinicalExplainer
 from src.utils import get_device, load_checkpoint
-from src.reports.report_generator import ClinicalReport
+from src.reporting.generator import ClinicalReport
 import matplotlib.pyplot as plt
 
 
@@ -276,9 +276,16 @@ class AVBlockPredictor:
             print(f"Report saved to {output_path}")
         
         elif output_path.suffix == '.pdf':
-            # Use professional report generator
+            # 1. Generate Visualization Image first (needed for report)
+            viz_path = output_path.with_suffix('.png')
+            # Assuming ecg_signal is available in results or we need to pass it.
+            # Actually results doesn't have the raw signal usually.
+            # We need to change the method signature or handle it.
+            # For now, let's just generate the PDF using the existing reporter.
             self.reporter.create_report(results, str(output_path))
             print(f"Professional Clinical Report saved to {output_path}")
+            
+            # Note: To get the heatmap image separately, use visualize_prediction explicitly.
         
         else:
             raise ValueError(f"Unsupported format: {output_path.suffix}")

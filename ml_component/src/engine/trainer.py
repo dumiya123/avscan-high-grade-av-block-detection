@@ -12,10 +12,10 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.models.ecg_unet import ECGUNet
-from src.data.loader import create_dataloaders
-from src.data.transforms import get_train_transforms, get_val_transforms
-from src.training.losses import MultiTaskLoss
+from src.modeling.ecg_unet import ECGUNet
+from src.data_pipeline.loader import create_dataloaders
+from src.data_pipeline.transforms import get_train_transforms, get_val_transforms
+from src.engine.losses import MultiTaskLoss
 from src.utils import set_seed, get_device, save_checkpoint, AverageMeter, format_time
 
 
@@ -169,7 +169,7 @@ def train_model(
     ).to(device)
     
     # Print model summary
-    from src.models.ecg_unet import model_summary
+    from src.modeling.ecg_unet import model_summary
     model_summary(model)
     
     # Loss function
