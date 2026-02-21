@@ -28,6 +28,13 @@ def focal_loss(pred, target, alpha=2.5, beta=4.0):
         return -neg_loss.sum() # Handle cases with no P-waves
     return -(pos_loss.sum() + neg_loss.sum()) / num_pos
 
+def dice_loss(pred, target, smooth=1e-6):
+    """Dice loss for mask segmentation."""
+    pred = pred.view(-1)
+    target = target.view(-1)
+    intersection = (pred * target).sum()
+    return 1 - ((2. * intersection + smooth) / (pred.sum() + target.sum() + smooth))
+
 def create_instance_loss(pred, target):
     """
     STRICT RESEARCH LOSS.
