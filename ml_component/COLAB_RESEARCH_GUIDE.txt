@@ -1,0 +1,53 @@
+COLAB TRAINING GUIDE - ATRIONNET HYBRID RESEARCH
+============================================
+
+1. PREPARATION
+--------------
+- Zip your "ml_component" folder into a file named: ml_component.zip
+- Upload "ml_component.zip" to the main folder of your Google Drive.
+- Open a new Google Colab notebook.
+- Set Runtime to GPU: Menu -> Runtime -> Change runtime type -> T4 GPU.
+
+2. CELL 1: SETUP AND DATA
+-------------------------
+# Connect to Drive and extract code
+from google.colab import drive
+import os
+drive.mount('/content/drive')
+
+!unzip -q /content/drive/MyDrive/ml_component.zip -d /content/
+!pip install -q wfdb tqdm matplotlib seaborn
+
+# Create necessary directories
+os.makedirs('/content/ml_component/data/raw/ludb', exist_ok=True)
+os.makedirs('/content/ml_component/reports/plots', exist_ok=True)
+os.makedirs('/content/ml_component/weights', exist_ok=True)
+
+# Download LUDB dataset
+%cd /content/ml_component
+!python scripts/download_ludb.py
+
+3. CELL 2: RUN TRAINING
+-----------------------
+# Set python path and start research trainer
+import sys
+import os
+sys.path.append('/content/ml_component')
+os.chdir('/content/ml_component')
+
+# Update CONFIG for Colab GPU speed
+# You can edit epochs or batch_size here if needed
+!python scripts/advanced_research_trainer.py
+
+4. CELL 3: RUN ABLATION STUDY (OPTIONAL)
+----------------------------------------
+# Generates the CNN vs Hybrid comparison plot
+!python scripts/run_ablation_study.py
+
+5. DOWNLOAD RESULTS
+-------------------
+- Your best model will be at: /content/ml_component/weights/atrion_hybrid_best.pth
+- All thesis plots will be in: /content/ml_component/reports/plots/
+- To save them back to Drive, run this final cell:
+!cp -r /content/ml_component/reports/plots /content/drive/MyDrive/atrion_results/
+!cp /content/ml_component/weights/atrion_hybrid_best.pth /content/drive/MyDrive/atrion_results/
