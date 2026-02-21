@@ -19,18 +19,30 @@ class LUDBLoader:
         self.records = self._get_record_list()
 
     def _get_record_list(self) -> List[str]:
-        """Finds all record names in the data directory."""
+        """Finds all record names in the data directory recursively."""
         if not self.data_dir.exists():
+            print(f"⚠️ Warning: Data directory {self.data_dir} does not exist.")
             return []
-        # LUDB records are named 1.hea, 2.hea, etc.
-        hea_files = list(self.data_dir.glob("*.hea"))
-        return sorted([f.stem for f in hea_files])
+        
+        # Search recursively for .hea files
+        hea_files = list(self.data_dir.rglob("*.hea"))
+        
+        # Filter out files in special folders like .ipynb_checkpoints
+        hea_files = [f for f in hea_files if ".ipynb_checkpoints" not in str(f)]
+        
+        # Store absolute paths to handle nested structures correctly
+        self.record_paths = {f.stem: f.parent for f in hea_files}
+        
+        print(f"🔍 Found {len(hea_files)} .hea files in {self.data_dir}")
+        return sorted(list(self.record_paths.keys()))
 
     def load_record(self, record_name: str) -> Tuple[np.ndarray, List[Dict]]:
         """
         Loads a single record and its P-wave annotations.
         """
-        record_path = str(self.data_dir / record_name)
+        # Use the stored parent directory for this specific record
+        record_parent = self.record_paths[record_name]
+        record_path = str(record_parent / record_name)
         
         # 1. Load the 12-lead signal
         record = wfdb.rdrecord(record_path)

@@ -1,16 +1,7 @@
 """
-AtrionNet: Anchor-Free 1D Instance Segmentation Model.
-Optimized for detecting and quantifying dissociated P-waves in High-Grade AV block.
-
-Architecture:
-- Encoder: Inception Blocks (multi-scale feature extraction)
-- Decoder: 1D Transposed Convolutions (upsampling to original resolution)
-- Prediction Heads (Anchor-Free):
-    1. Heatmap Head: Detects wave centers (Dissociated P-waves)
-    2. Width Head: Predicts temporal duration (Instance width)
-    3. Mask Head: Sample-wise segmentation for each instance
+AtrionNet Hybrid: CNN + Temporal Modeling (BiLSTM).
+Optimized for high-precision P-wave quantification and dissociated P-wave detection.
 """
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,6 +9,8 @@ import torch.nn.functional as F
 class InceptionBlock1D(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(InceptionBlock1D, self).__init__()
+        self.out_channels = out_channels
+        self.avg_pool = nn.AvgPool1d(kernel_size=3, stride=1, padding=1)
         self.bottleneck = nn.Conv1d(in_channels, out_channels // 4, kernel_size=1)
         
         self.conv_small = nn.Conv1d(out_channels // 4, out_channels // 4, kernel_size=9, padding=4)
@@ -37,11 +30,15 @@ class InceptionBlock1D(nn.Module):
         out = torch.cat([out1, out2, out3, out4], dim=1)
         return self.relu(self.bn(out))
 
-class AtrionNetSegmentation(nn.Module):
-    def __init__(self, in_channels=12, num_instances=1):
-        super(AtrionNetSegmentation, self).__init__()
+class AtrionNetHybrid(nn.Module):
+    """
+    RESEARCH-GRADE HYBRID ARCHITECTURE (CNN + BiLSTM)
+    Addresses the gap in temporal modeling for dissociated P-waves.
+    """
+    def __init__(self, in_channels=12, hidden_dim=256):
+        super(AtrionNetHybrid, self).__init__()
         
-        # 1. Encoder (Inception-based scale capture)
+        # 1. CNN Encoder (Spatial/Local Feature Extraction)
         self.enc1 = InceptionBlock1D(in_channels, 64)
         self.pool1 = nn.MaxPool1d(2)
         
@@ -51,10 +48,17 @@ class AtrionNetSegmentation(nn.Module):
         self.enc3 = InceptionBlock1D(128, 256)
         self.pool3 = nn.MaxPool1d(2)
         
-        # 2. Bridge
-        self.bridge = InceptionBlock1D(256, 512)
+        # 2. Bridge: Temporal Modeling (BiLSTM)
+        # Sequence length here is L/8 = 625
+        self.lstm = nn.LSTM(input_size=256, 
+                           hidden_size=hidden_dim, 
+                           num_layers=1, 
+                           batch_first=True, 
+                           bidirectional=True)
+        # Projection back to 512 for decoder compatibility
+        self.bridge_proj = nn.Conv1d(hidden_dim * 2, 512, kernel_size=1)
         
-        # 3. Decoder
+        # 3. Decoder with Skip Connections
         self.up3 = nn.ConvTranspose1d(512, 256, kernel_size=2, stride=2)
         self.dec3 = InceptionBlock1D(512, 256)
         
@@ -64,25 +68,28 @@ class AtrionNetSegmentation(nn.Module):
         self.up1 = nn.ConvTranspose1d(128, 64, kernel_size=2, stride=2)
         self.dec1 = InceptionBlock1D(128, 64)
 
-        # 4. Anchor-Free HEADS (The Research Innovation)
-        # Heatmap branch: Probability of a P-wave center at this sample
+        # 4. Anchor-Free HEADS
+        # Heatmap branch: Probability of a P-wave center
         self.heatmap_head = nn.Sequential(
             nn.Conv1d(64, 32, kernel_size=3, padding=1),
+            nn.BatchNorm1d(32),
             nn.ReLU(),
             nn.Conv1d(32, 1, kernel_size=1),
             nn.Sigmoid()
         )
         
-        # Width branch: Normalized temporal duration of the wave at this center
+        # Width branch: Normalized temporal duration (Regression)
         self.width_head = nn.Sequential(
             nn.Conv1d(64, 32, kernel_size=3, padding=1),
+            nn.BatchNorm1d(32),
             nn.ReLU(),
             nn.Conv1d(32, 1, kernel_size=1)
         )
         
-        # Mask branch: Sample-wise segmentation (is this sample part of the instance?)
+        # Mask branch: Sample-wise segmentation
         self.mask_head = nn.Sequential(
             nn.Conv1d(64, 32, kernel_size=3, padding=1),
+            nn.BatchNorm1d(32),
             nn.ReLU(),
             nn.Conv1d(32, 1, kernel_size=1),
             nn.Sigmoid()
@@ -94,8 +101,12 @@ class AtrionNetSegmentation(nn.Module):
         e2 = self.enc2(self.pool1(e1)) # [128, 2500]
         e3 = self.enc3(self.pool2(e2)) # [256, 1250]
         
-        # Bridge
-        b = self.bridge(self.pool3(e3)) # [512, 625]
+        # Bridge (BiLSTM)
+        # Expected dim for LSTM: [Batch, Seq, Features]
+        b_in = self.pool3(e3).transpose(1, 2) # [Batch, 625, 256]
+        b_out, _ = self.lstm(b_in) # [Batch, 625, 512]
+        b_out = b_out.transpose(1, 2) # [Batch, 512, 625]
+        b = self.bridge_proj(b_out)
         
         # Decoder with Skip Connections
         d3 = self.up3(b)
@@ -107,22 +118,42 @@ class AtrionNetSegmentation(nn.Module):
         d1 = self.up1(d2)
         d1 = self.dec1(torch.cat([d1, e1], dim=1))
         
-        # Anchor-Free Outputs
-        heatmap = self.heatmap_head(d1)
-        width = self.width_head(d1)
-        mask = self.mask_head(d1)
-        
+        # Outputs
         return {
-            'heatmap': heatmap,
-            'width': width,
-            'mask': mask
+            'heatmap': self.heatmap_head(d1),
+            'width': self.width_head(d1),
+            'mask': self.mask_head(d1)
         }
 
-if __name__ == "__main__":
-    # Test the model
-    model = AtrionNetSegmentation(in_channels=12)
-    dummy_input = torch.randn(1, 12, 5000)
-    output = model(dummy_input)
-    print(f"Heatmap shape: {output['heatmap'].shape}")
-    print(f"Width shape: {output['width'].shape}")
-    print(f"Mask shape: {output['mask'].shape}")
+class AtrionNetBaseline(nn.Module):
+    """
+    Original CNN-only architecture for ablation comparison.
+    """
+    def __init__(self, in_channels=12):
+        super(AtrionNetBaseline, self).__init__()
+        self.enc1 = InceptionBlock1D(in_channels, 64)
+        self.pool1 = nn.MaxPool1d(2)
+        self.enc2 = InceptionBlock1D(64, 128)
+        self.pool2 = nn.MaxPool1d(2)
+        self.enc3 = InceptionBlock1D(128, 256)
+        self.pool3 = nn.MaxPool1d(2)
+        self.bridge = InceptionBlock1D(256, 512)
+        self.up3 = nn.ConvTranspose1d(512, 256, kernel_size=2, stride=2)
+        self.dec3 = InceptionBlock1D(512, 256)
+        self.up2 = nn.ConvTranspose1d(256, 128, kernel_size=2, stride=2)
+        self.dec2 = InceptionBlock1D(256, 128)
+        self.up1 = nn.ConvTranspose1d(128, 64, kernel_size=2, stride=2)
+        self.dec1 = InceptionBlock1D(128, 64)
+        self.heatmap_head = nn.Sequential(nn.Conv1d(64, 32, 3, padding=1), nn.ReLU(), nn.Conv1d(32, 1, 1), nn.Sigmoid())
+        self.width_head = nn.Sequential(nn.Conv1d(64, 32, 3, padding=1), nn.ReLU(), nn.Conv1d(32, 1, 1))
+        self.mask_head = nn.Sequential(nn.Conv1d(64, 32, 3, padding=1), nn.ReLU(), nn.Conv1d(32, 1, 1), nn.Sigmoid())
+
+    def forward(self, x):
+        e1 = self.enc1(x)
+        e2 = self.enc2(self.pool1(e1))
+        e3 = self.enc3(self.pool2(e2))
+        b = self.bridge(self.pool3(e3))
+        d3 = self.dec3(torch.cat([self.up3(b), e3], dim=1))
+        d2 = self.dec2(torch.cat([self.up2(d3), e2], dim=1))
+        d1 = self.dec1(torch.cat([self.up1(d2), e1], dim=1))
+        return {'heatmap': self.heatmap_head(d1), 'width': self.width_head(d1), 'mask': self.mask_head(d1)}
