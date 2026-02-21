@@ -29,31 +29,40 @@ class AtrionInstanceDataset(Dataset):
         sigma = np.std(sig, axis=1, keepdims=True) + 1e-6
         return (sig - mu) / sigma
 
-    def _augment(self, sig, centers, spans):
-        """On-the-fly Research Augmentations."""
-        # 1. Random Time Shift (+/- 250 samples)
+    def _augment(self, sig, centers, spans, idx):
+        """On-the-fly Research Augmentations with Overlapping MixUp."""
+        # 1. Random MixUp (30% chance) - THE RESEARCH INNOVATION
+        # Overlay another real record to simulate overlapping/dissociated waves
+        if np.random.rand() < 0.3:
+            rand_idx = np.random.randint(0, len(self.signals))
+            mix_sig = self.signals[rand_idx].copy()
+            mix_ann = self.annotations[rand_idx]
+            
+            # Weighted addition (0.7 primary + 0.3 noise-like secondary)
+            sig = (sig * 0.7) + (mix_sig * 0.3)
+            
+            # Combine P-wave labels
+            for p in mix_ann['p_waves']:
+                centers.append(p[1])
+                spans.append((p[0], p[2]))
+
+        # 2. Random Time Shift (+/- 250 samples)
         shift = np.random.randint(-250, 250)
         
-        # 2. Amplitude Scaling (0.8x to 1.2x)
-        scale = np.random.uniform(0.8, 1.2)
-        sig = sig * scale
+        # 3. Amplitude Scaling & Noise
+        sig = sig * np.random.uniform(0.8, 1.2)
+        sig += np.random.normal(0, 0.01, sig.shape)
         
-        # 3. Gaussian Noise injection
-        noise = np.random.normal(0, 0.01, sig.shape)
-        sig = sig + noise
-        
-        # 4. Lead Dropout (randomly zero 1-2 leads)
-        if np.random.rand() > 0.7:
+        # 4. Lead Dropout
+        if np.random.rand() > 0.8:
             drop_indices = np.random.choice(12, size=np.random.randint(1, 3), replace=False)
             sig[drop_indices, :] = 0
             
         # Update labels for shift
-        new_centers = []
-        new_spans = []
+        new_centers, new_spans = [], []
         for c in centers:
             new_c = c + shift
-            if 0 <= new_c < self.seq_len:
-                new_centers.append(new_c)
+            if 0 <= new_c < self.seq_len: new_centers.append(new_c)
         for s_start, s_end in spans:
             new_s = (max(0, s_start + shift), min(self.seq_len, s_end + shift))
             new_spans.append(new_s)
@@ -66,8 +75,11 @@ class AtrionInstanceDataset(Dataset):
             
         return sig, new_centers, new_spans
 
-    def _generate_heatmap(self, centers, sigma=15):
-        """Generates Gaussian-smoothed heatmap."""
+    def _generate_heatmap(self, centers, sigma=5):
+        """
+        Generates Tight Gaussian-smoothed heatmap.
+        Sigma=5 (10ms @ 500Hz) forces High-Precision localization.
+        """
         heatmap = np.zeros(self.seq_len)
         for center in centers:
             x = np.arange(self.seq_len)
@@ -83,7 +95,7 @@ class AtrionInstanceDataset(Dataset):
         spans = [(p[0], p[2]) for p in ann['p_waves']]
         
         if self.is_train:
-            sig, centers, spans = self._augment(sig, centers, spans)
+            sig, centers, spans = self._augment(sig, centers, spans, idx)
             
         # Normalize
         sig = self._normalize(sig)
@@ -105,3 +117,47 @@ class AtrionInstanceDataset(Dataset):
             'width': torch.FloatTensor(width_map),
             'mask': torch.FloatTensor(mask)
         }
+
+def focal_loss(pred, target, alpha=2, beta=4):
+    """Refined Focal Loss with Hard-Negative Emphasis."""
+    pred = torch.clamp(pred, 1e-6, 1 - 1e-6)
+    pos_inds = target.eq(1).float()
+    neg_inds = target.lt(1).float()
+    
+    # Increase weight for 'Hard' negatives (like T-waves)
+    neg_weights = torch.pow(1 - target, beta)
+
+    pos_loss = torch.log(pred) * torch.pow(1 - pred, alpha) * pos_inds
+    neg_loss = torch.log(1 - pred) * torch.pow(pred, alpha) * neg_weights * neg_inds
+
+    num_pos = pos_inds.float().sum()
+    if num_pos == 0:
+        return -neg_loss.sum()
+    return -(pos_loss.sum() + neg_loss.sum()) / num_pos
+
+def dice_loss(pred, target, smooth=1e-6):
+    """Dice loss for mask segmentation."""
+    pred = pred.view(-1)
+    target = target.view(-1)
+    intersection = (pred * target).sum()
+    return 1 - ((2. * intersection + smooth) / (pred.sum() + target.sum() + smooth))
+
+def create_instance_loss(pred, target):
+    """AtrionNet v4.0: Balanced Loss for Overlapping Detection."""
+    import torch.nn.functional as F
+    
+    # 1. Detection (Increased Focal weight to fix low Precision)
+    hm_loss = focal_loss(pred['heatmap'], target['heatmap'])
+    
+    # 2. Quantification
+    center_mask = target['heatmap'] > 0.95
+    if center_mask.sum() > 0:
+        w_loss = F.smooth_l1_loss(pred['width'][center_mask], target['width'][center_mask])
+    else:
+        w_loss = torch.tensor(0.0).to(pred['width'].device)
+        
+    # 3. Segmentation
+    m_loss = F.binary_cross_entropy(pred['mask'], target['mask']) + dice_loss(pred['mask'], target['mask'])
+    
+    # Final Balance (Heavy weighting on Heatmap to resolve FP issues)
+    return (20.0 * hm_loss) + (1.0 * w_loss) + (5.0 * m_loss)

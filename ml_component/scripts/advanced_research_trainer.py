@@ -25,11 +25,11 @@ from src.utils.plotting import save_publication_plots, plot_confusion_matrix, pl
 CONFIG = {
     'data_dir': "data/raw/ludb",
     'device': torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-    'epochs': 150,
+    'epochs': 200,                # Increased to allow BiLSTM/Attention convergence
     'batch_size': 16,
-    'lr': 1e-4,
+    'lr': 5e-5,                   # Lowered for stable temporal learning
     'weight_decay': 1e-4,
-    'early_stopping_patience': 15,
+    'early_stopping_patience': 30, # Increased to survive precision plateaus
     'seed': 42,
     'plot_dir': "reports/plots",
     'model_save_path': "weights/atrion_hybrid_best.pth",
@@ -155,17 +155,50 @@ def train():
         else:
             patience_counter += 1
             
+        # --- PERIODIC CHECKPOINTING ---
+        if (epoch + 1) % 20 == 0:
+            cp_path = f"weights/checkpoint_epoch_{epoch+1}.pth"
+            torch.save({
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'val_f1': avg_f1,
+            }, cp_path)
+            print(f"💾 Epoch Checkpoint Saved: {cp_path}")
+            
         scheduler.step()
         if patience_counter >= CONFIG['early_stopping_patience']:
             print("🛑 Early Stopping Triggered.")
             break
             
-    # Final Visualization
+    # Final Visualization & Reporting
     print("\n🔬 Generating Publication Evidence...")
     save_publication_plots(history, None, CONFIG['plot_dir'])
     if 'best_pr' in locals():
         plot_pr_curve(best_pr[0], best_pr[1], best_pr[2], f"{CONFIG['plot_dir']}/pr_curve_val_best.png")
     
+    # --- RESEARCH REPORT GENERATION ---
+    report_path = f"{CONFIG['plot_dir']}/research_report.txt"
+    with open(report_path, 'w') as f:
+        f.write("====================================================\n")
+        f.write("🚀 ATRION-NET v4.0 FINAL RESEARCH REPORT\n")
+        f.write("====================================================\n\n")
+        f.write(f"MODEL ARCHITECTURE: Attentional-Hybrid (Inception + BiLSTM + SE-Attention)\n")
+        f.write(f"DEVICE: {CONFIG['device']}\n")
+        f.write(f"TOTAL EPOCHS: {len(history['train_loss'])}\n")
+        f.write(f"FINAL BEST VALIDATION F1: {best_f1:.4f}\n")
+        f.write(f"FINAL BEST mAP @ 0.5: {history['val_map'][np.argmax(history['val_f1'])]:.4f}\n\n")
+        
+        f.write("--- DATASET SUMMARY ---\n")
+        f.write(f"Training Samples: {len(idx_tr)}\n")
+        f.write(f"Validation Samples: {len(idx_val)}\n")
+        f.write(f"Test Samples (Held-out): {len(idx_test)}\n\n")
+        
+        f.write("--- HYPERPARAMETERS ---\n")
+        for k, v in CONFIG.items():
+            f.write(f"{k}: {v}\n")
+            
+    print(f"📄 Research Report saved to {report_path}")
     print(f"📊 Results saved to {CONFIG['plot_dir']}")
 
 if __name__ == "__main__":
