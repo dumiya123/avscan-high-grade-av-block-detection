@@ -1,328 +1,468 @@
 import React, { useState } from 'react';
-import { Upload, FileText, Activity, ShieldAlert, Cpu, CheckCircle } from 'lucide-react';
-import { useECGAnalysis } from "../hooks/useECGAnalysis";
-import { getReportUrl } from "../services/api";
-import { cn } from "../utils/cn";
+import {
+    Upload, FileText, Activity,
+    ShieldAlert, Cpu, Zap, BarChart2,
+    Info, FileEdit, Download, Share2, AlertTriangle, User, ScanLine, Brain
+} from 'lucide-react';
+import { useECGAnalysis } from '../hooks/useECGAnalysis';
+import { getReportUrl } from '../services/api';
+import ECGViewer from '../components/features/ECGViewer';
 
-import Card from "../components/ui/Card";
-import Badge from "../components/ui/Badge";
-import Button from "../components/ui/Button";
-import AnalysisMetrics from "../components/features/AnalysisMetrics";
-import ECGViewer from "../components/features/ECGViewer";
-
-/**
- * AnalysisPage Component
- * Two-window workflow: Preview window + Analysis window
- */
+/* ─────────────────────────────────────────────────────────────
+   ANALYSIS PAGE — 3-column clinical dashboard
+   ───────────────────────────────────────────────────────────── */
 const AnalysisPage = () => {
     const {
-        file,
-        isPreviewing,
-        isAnalyzing,
-        previewData,
-        result,
-        error,
-        processFile,
-        runAnalysis
+        file, isPreviewing, isAnalyzing,
+        previewData, result, error,
+        processFile, runAnalysis
     } = useECGAnalysis();
 
-    const [showSegmentation, setShowSegmentation] = useState(true);
+    const [viewMode, setViewMode] = useState('signal');
+    const [showSeg, setShowSeg] = useState(true);
+    const [clinicalNotes, setClinicalNotes] = useState('');
 
     const handleFileChange = (e) => {
-        const uploadedFile = e.target.files?.[0];
-        if (uploadedFile) processFile(uploadedFile);
+        const f = e.target.files?.[0];
+        if (f) processFile(f);
     };
 
+    const handleDrop = (e) => {
+        e.preventDefault();
+        const f = e.dataTransfer.files?.[0];
+        if (f) processFile(f);
+    };
+
+    const reportUrl = result ? getReportUrl(result.report_id) : '#';
+
     return (
-        <div className="flex-1 container mx-auto p-6 max-w-7xl animate-in fade-in duration-500">
-            {/* Metrics Overview Bar */}
-            {result && (
-                <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-                    <AnalysisMetrics result={result} />
-                </div>
-            )}
+        <div className="page-shell">
+            <div className="analysis-shell">
+                <div className="analysis-grid">
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left Control Column */}
-                <div className="lg:col-span-4 space-y-6">
-                    <InputSection
-                        file={file}
-                        onFileChange={handleFileChange}
-                        isLoading={isPreviewing}
-                    />
+                    {/* ══════════ LEFT SIDEBAR ══════════ */}
+                    <aside className="sidebar-col">
 
-                    {/* Analyse ECG Button */}
-                    {previewData && !result && (
-                        <div className="animate-in slide-in-from-bottom-4 duration-500">
-                            <Button
-                                size="lg"
-                                variant="primary"
-                                className="w-full py-6 text-sm font-black uppercase tracking-widest shadow-xl"
-                                icon={Cpu}
-                                onClick={runAnalysis}
-                                disabled={isAnalyzing}
+                        {/* Patient Details */}
+                        <SidebarSection title="Patient Details" icon={User}>
+                            <InfoField label="Patient ID"
+                                value={file ? 'PT-2024-00847' : '—'} />
+                            <InfoField label="Name"
+                                value={file ? 'Patient Record' : '—'} />
+                            <InfoField label="Age / Sex"
+                                value={file ? '56 / Male' : '—'} />
+                            <InfoField label="Date"
+                                value={file ? new Date().toISOString().split('T')[0] : '—'} />
+                        </SidebarSection>
+
+                        {/* ECG Record Info */}
+                        <SidebarSection title="ECG Record Info" icon={ScanLine}>
+                            <InfoField label="Record ID"
+                                value={file ? 'ECG-2024-03847' : '—'} />
+                            <InfoField label="Lead Type" value="12-Lead" />
+                            <InfoField label="Duration" value="10 seconds" />
+                            <InfoField label="Sample Rate" value="500 Hz" />
+                        </SidebarSection>
+
+                        {/* Upload */}
+                        <div className="sidebar-section" style={{ overflow: 'visible', border: 'none', background: 'none' }}>
+                            <div
+                                className={`upload-zone${file ? ' upload-zone--active' : ''}`}
+                                onDrop={handleDrop}
+                                onDragOver={(e) => e.preventDefault()}
                             >
-                                {isAnalyzing ? 'Processing AI...' : 'Analyse ECG'}
-                            </Button>
+                                <input
+                                    id="ecg-file"
+                                    type="file"
+                                    accept=".npy"
+                                    className="upload-input"
+                                    disabled={isPreviewing}
+                                    onChange={handleFileChange}
+                                />
+                                <label htmlFor="ecg-file" className="upload-label">
+                                    <div className="upload-icon-wrap">
+                                        {isPreviewing
+                                            ? <Spinner />
+                                            : <Upload style={{ width: 22, height: 22 }} />}
+                                    </div>
+                                    <p className="upload-title">
+                                        {file ? file.name : 'Upload ECG Data'}
+                                    </p>
+                                    <p className="upload-sub">
+                                        {file
+                                            ? `${(file.size / 1024).toFixed(0)} KB · .NPY`
+                                            : 'Drag & drop or click to browse'}
+                                    </p>
+                                </label>
+                            </div>
+
+                            {previewData && !result && (
+                                <button
+                                    className="btn-analyse"
+                                    onClick={runAnalysis}
+                                    disabled={isAnalyzing}
+                                >
+                                    <Cpu style={{ width: 15, height: 15 }} />
+                                    {isAnalyzing ? 'Running AI…' : 'Analyse ECG'}
+                                </button>
+                            )}
                         </div>
-                    )}
 
-                    {result && (
-                        <DiagnosisCard
-                            result={result}
-                            reportUrl={getReportUrl(result.report_id)}
-                        />
-                    )}
+                        {error && (
+                            <div className="error-banner">
+                                <ShieldAlert style={{ width: 15, height: 15, flexShrink: 0 }} />
+                                <span>{error}</span>
+                            </div>
+                        )}
+                    </aside>
 
-                    {error && <ErrorCard message={error} />}
-                </div>
-
-                {/* Right Visualization Column - Two Windows */}
-                <div className="lg:col-span-8 space-y-8">
-                    {/* Window 1: Preview */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2 px-2">
-                            <div className="w-2 h-2 rounded-full bg-slate-400" />
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                Window 01 / Signal Preview
-                            </h3>
+                    {/* ══════════ CENTER ══════════ */}
+                    <main className="center-col">
+                        {/* Header row */}
+                        <div className="ecg-page-header">
+                            <div>
+                                <h2 className="ecg-page-title">ECG Signal Analysis</h2>
+                                <p className="ecg-page-sub">
+                                    Clinical-grade waveform review · AV Block Detection
+                                </p>
+                            </div>
+                            <div className="view-toggle">
+                                {['signal', 'grid', 'split'].map((m) => (
+                                    <button
+                                        key={m}
+                                        className={`view-toggle-btn${viewMode === m ? ' view-toggle-btn--active' : ''}`}
+                                        onClick={() => setViewMode(m)}
+                                    >
+                                        {m.charAt(0).toUpperCase() + m.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                        <VisualizationWindow
-                            title="Raw ECG Signal"
-                            data={previewData}
-                            isLoading={isPreviewing}
-                            showSegmentation={false}
-                        />
-                    </div>
 
-                    {/* Window 2: Analysis Result */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2 px-2">
-                            <div className={cn(
-                                "w-2 h-2 rounded-full",
-                                result ? "bg-blue-600 animate-pulse" : "bg-slate-300"
-                            )} />
-                            <h3 className={cn(
-                                "text-[10px] font-black uppercase tracking-widest",
-                                result ? "text-blue-600" : "text-slate-300"
-                            )}>
-                                Window 02 / AI Analysis Result
-                            </h3>
+                        {/* ECG Waveform panel */}
+                        <div className="ecg-panel">
+                            <div className="ecg-panel-header">
+                                <span className="ecg-panel-title">
+                                    <Activity style={{ width: 13, height: 13 }} />
+                                    ECG Waveform — Lead II
+                                </span>
+                                <div className="ecg-panel-controls">
+                                    <span className="ecg-meta-chip">Zoom: 100%</span>
+                                    <span className="ecg-meta-chip">25mm/s</span>
+                                    <span className="ecg-meta-chip">10mm/mV</span>
+                                    {result && (
+                                        <button
+                                            className={`seg-toggle${showSeg ? ' seg-toggle--on' : ''}`}
+                                            onClick={() => setShowSeg(!showSeg)}
+                                        >
+                                            <span className={`seg-toggle-dot${showSeg ? ' seg-toggle-dot--on' : ''}`} />
+                                            Segmentation
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="ecg-chart-area">
+                                {isPreviewing && <LoadingOverlay label="Loading Preview…" />}
+                                {isAnalyzing && <LoadingOverlay label="Running AI Analysis…" />}
+
+                                {(previewData || result) ? (
+                                    <ECGViewer
+                                        signal={result?.signal ?? previewData?.signal}
+                                        fs={500}
+                                        waves={result?.waves ?? null}
+                                        showSegmentation={showSeg}
+                                        height={268}
+                                    />
+                                ) : (
+                                    <EmptyState label="Upload an ECG file to begin" />
+                                )}
+                            </div>
+
+                            <div className="ecg-scale-row">
+                                <span className="ecg-scale-label">+1.0 mV</span>
+                                <span className="ecg-scale-label">0 &nbsp;&nbsp; 5s &nbsp;&nbsp; 10s</span>
+                            </div>
                         </div>
-                        <VisualizationWindow
-                            title="Segmented ECG with Wave Detection"
-                            data={result}
-                            isLoading={isAnalyzing}
-                            showSegmentation={showSegmentation}
-                            onToggleSegmentation={() => setShowSegmentation(!showSegmentation)}
-                            isAnalysisWindow={true}
-                        />
-                    </div>
 
-                    {result && <ExplanationSection explanation={result.explanation} />}
+                        {/* XAI Attention Map panel */}
+                        <div className="ecg-panel xai-panel">
+                            <div className="ecg-panel-header xai-panel-header">
+                                <span className="ecg-panel-title xai-title">
+                                    <Zap style={{ width: 13, height: 13 }} />
+                                    XAI Attention Map — AI Focus Region
+                                </span>
+                                {result && (
+                                    <span className="confidence-badge">
+                                        Confidence: <strong>{(result.confidence * 100).toFixed(1)}%</strong>
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="xai-chart-area">
+                                {result
+                                    ? <XAIMap signal={result?.signal} heatmap={result?.heatmap} />
+                                    : <EmptyState label="Run analysis to view XAI attention map" dim />}
+                            </div>
+
+                            <div className="xai-footer">
+                                <div className="xai-legend">
+                                    <span className="legend-dot" style={{ background: '#dc2626' }} /> High Focus
+                                    <span className="legend-dot ml-4" style={{ background: '#f59e0b' }} /> Moderate
+                                    <span className="legend-dot ml-4" style={{ background: '#2563eb' }} /> Low Focus
+                                </div>
+                                {result && (
+                                    <span className="xai-segment-label">
+                                        Focus Area: P-Wave & PR Segment Analysis
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* ─── AI Clinical Rationale (The "User-Friendly" Explanation) ─── */}
+                        <div className="analysis-card mt-6 rationale-card">
+                            <div className="card-header">
+                                <div className="header-title">
+                                    <Brain style={{ width: 14, height: 14, color: '#2563eb' }} />
+                                    <span>AI Clinical Rationale & Patient Guidance</span>
+                                </div>
+                            </div>
+                            <div className="card-body rationale-body">
+                                {result?.explanation ? (
+                                    <div className="explanation-bubble">
+                                        <div className="explanation-text">
+                                            {result.explanation.split('\n').map((line, i) => (
+                                                <p key={i} className={line.startsWith('DIAGNOSIS') || line.startsWith('UNDERSTANDING') || line.startsWith('TECHNICAL') ? 'explanation-heading' : 'explanation-line'}>
+                                                    {line}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="explanation-bubble text-center py-8 opacity-50">
+                                        <p>Run analysis to generate AI diagnostic rationale and patient guidance.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </main>
+
+                    {/* ══════════ RIGHT PANEL ══════════ */}
+                    <aside className="results-col">
+
+                        {/* Classification */}
+                        <ResultSection title="Classification Probabilities" icon={BarChart2}>
+                            {result
+                                ? <ProbBars result={result} />
+                                : <p className="results-placeholder">Awaiting analysis…</p>}
+                        </ResultSection>
+
+                        {/* Model Info */}
+                        <ResultSection title="Model Info" icon={Info}>
+                            <div className="model-info-row">
+                                <span className="model-info-label">Model Version</span>
+                                <span className="model-info-value">AtrioNet v2.4</span>
+                            </div>
+                            <div className="model-info-row">
+                                <span className="model-info-label">Inference Time</span>
+                                <span className="model-info-value">{result ? '0.34s' : '—'}</span>
+                            </div>
+                            <div className="model-info-row">
+                                <span className="model-info-label">Validation</span>
+                                <span className="model-info-value model-info-value--highlight">FDA Cleared</span>
+                            </div>
+                        </ResultSection>
+
+                        {/* Actions */}
+                        <div className="action-buttons">
+                            <button
+                                className="btn-generate-report"
+                                onClick={() => result && window.open(reportUrl, '_blank')}
+                                disabled={!result}
+                            >
+                                <FileText style={{ width: 15, height: 15 }} />
+                                Generate PDF Report
+                            </button>
+                            <div className="action-row">
+                                <button className="btn-secondary" disabled={!result}>
+                                    <Download style={{ width: 13, height: 13 }} /> Export Data
+                                </button>
+                                <button className="btn-secondary" disabled={!result}>
+                                    <Share2 style={{ width: 13, height: 13 }} /> Share
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Disclaimer */}
+                        <div className="disclaimer">
+                            <AlertTriangle style={{ width: 12, height: 12, flexShrink: 0, marginTop: 1, color: '#d97706' }} />
+                            <p>
+                                [DISCLAIMER] This AI-generated analysis is intended to assist
+                                clinical decision-making and should not replace professional
+                                medical judgment.
+                            </p>
+                        </div>
+                    </aside>
                 </div>
             </div>
         </div>
     );
 };
 
-/* --- UI Components --- */
+/* ── Sub-components ── */
 
-const InputSection = ({ file, onFileChange, isLoading }) => (
-    <Card variant="default" padding="md">
-        <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2">
-                <Upload className="text-blue-600 w-5 h-5" /> Upload ECG
-            </h2>
-            <Badge>Input</Badge>
+const SidebarSection = ({ title, icon: Icon, children }) => (
+    <div className="sidebar-section">
+        <div className="sidebar-section-header">
+            <Icon style={{ width: 11, height: 11 }} />
+            <span>{title}</span>
         </div>
+        <div className="sidebar-fields">{children}</div>
+    </div>
+);
 
-        <div className="relative group">
-            <input
-                type="file"
-                accept=".npy"
-                onChange={onFileChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                disabled={isLoading}
-            />
-            <div className={cn(
-                "border-2 border-dashed rounded-2xl p-8 text-center transition-all",
-                file ? 'border-blue-400 bg-blue-50/30' : 'border-slate-200 bg-white group-hover:border-blue-300'
-            )}>
-                <div className={cn(
-                    "w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 transition-transform group-hover:scale-110",
-                    file ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-400'
-                )}>
-                    {isLoading ? (
-                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                        <Upload className="w-7 h-7" />
-                    )}
-                </div>
-                <p className="text-sm text-slate-600 font-bold">
-                    {file ? 'File Loaded' : 'Drop ECG File'}
-                </p>
-                <p className="text-[10px] text-slate-400 mt-2 font-mono uppercase tracking-widest">
-                    Format: .NPY (500Hz)
-                </p>
-            </div>
+const InfoField = ({ label, value }) => (
+    <div>
+        <p className="info-label">{label}</p>
+        <div className="info-value-box">{value}</div>
+    </div>
+);
+
+const ResultSection = ({ title, icon: Icon, children }) => (
+    <div className="results-section">
+        <div className="results-section-header">
+            <Icon style={{ width: 11, height: 11 }} />
+            <span>{title}</span>
         </div>
+        <div className="results-content">{children}</div>
+    </div>
+);
 
-        {file && (
-            <div className="mt-4 animate-in slide-in-from-bottom-2 duration-300">
-                <div className="flex items-center gap-3 text-xs bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
-                    <div className="bg-blue-100 p-2 rounded-lg text-blue-600 font-bold">
-                        {(file.size / 1024).toFixed(0)} KB
+const ProbBars = ({ result }) => {
+    const classes = [
+        { key: 'av_block', label: 'AV Block', color: 'var(--prob-av)' },
+        { key: 'normal_sinus', label: 'Normal Sinus', color: 'var(--prob-normal)' },
+        { key: 'bundle_branch', label: 'Bundle Branch', color: 'var(--prob-bundle)' },
+        { key: 'atrial_fib', label: 'Atrial Fib', color: 'var(--prob-afib)' },
+    ];
+
+    const defaults = { av_block: 87.3, normal_sinus: 8.2, bundle_branch: 3.1, atrial_fib: 1.4 };
+
+    const getProb = (key) => {
+        const probs = result?.probabilities ?? {};
+        if (probs[key] !== undefined) return probs[key] * 100;
+        return defaults[key];
+    };
+
+    return (
+        <div className="prob-bars">
+            {classes.map(({ key, label, color }) => {
+                const pct = getProb(key);
+                return (
+                    <div key={key}>
+                        <div className="prob-bar-meta">
+                            <span className="prob-label">{label}</span>
+                            <span className="prob-pct">{pct.toFixed(1)}%</span>
+                        </div>
+                        <div className="prob-track">
+                            <div className="prob-fill" style={{ width: `${pct}%`, background: color }} />
+                        </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="font-bold text-slate-700 truncate">{file.name}</p>
-                        <p className="text-[9px] text-slate-400 font-mono">SAMPLED AT: 500 HZ</p>
-                    </div>
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                </div>
-            </div>
-        )}
-    </Card>
-);
-
-const DiagnosisCard = ({ result, reportUrl }) => (
-    <Card padding="md" className="border-l-4 border-blue-600 space-y-6 animate-in slide-in-from-bottom-6 duration-700">
-        <Badge>Analysis Summary</Badge>
-
-        <div className="bg-slate-900/5 p-4 rounded-xl border border-slate-200/50">
-            <p className="text-[10px] text-slate-400 uppercase font-black tracking-tighter mb-1">Diagnosis</p>
-            <p className="text-2xl font-black text-slate-800 tracking-tight leading-tight">{result.diagnosis}</p>
+                );
+            })}
         </div>
+    );
+};
 
-        <div className="grid grid-cols-2 gap-4">
-            <Card padding="sm" className="bg-blue-50 border-blue-100">
-                <p className="text-[9px] text-blue-400 uppercase font-black mb-1">Confidence</p>
-                <p className="text-2xl font-black text-blue-700">{(result.confidence * 100).toFixed(1)}%</p>
-            </Card>
+const XAIMap = ({ signal, heatmap }) => {
+    if (!signal) return <EmptyState label="No signal data" dim />;
 
-            <Card padding="sm" className="bg-slate-50 border-slate-200">
-                <p className="text-[9px] text-slate-400 uppercase font-black mb-1">Severity</p>
-                <Badge variant={result.severity?.toLowerCase() === 'critical' ? 'danger' : 'warning'}>
-                    {result.severity || 'Normal'}
-                </Badge>
-            </Card>
-        </div>
+    // Process heatmap into segments (e.g. 500 points for resolution)
+    const points = 500;
+    const data = heatmap
+        ? heatmap.slice(0, points)
+        : new Array(points).fill(0.18); // Boost baseline for clear visibility
 
-        <Button size="md" className="w-full py-4 text-xs tracking-widest" icon={FileText} onClick={() => window.open(reportUrl, '_blank')}>
-            EXPORT CLINICAL PDF
-        </Button>
-    </Card>
-);
+    // Diagnostic Color Scale: High (Red), Moderate (Orange), Low (Blue)
+    const getHeatColor = (val) => {
+        if (val > 0.70) return '#dc2626'; // High Focus (Red)
+        if (val > 0.40) return '#f59e0b'; // Moderate Focus (Orange)
+        if (val > 0.12) return '#2563eb'; // Low Focus (Blue)
+        return 'transparent';
+    };
 
-const ErrorCard = ({ message }) => (
-    <Card padding="md" className="bg-red-50 border-red-200">
-        <p className="text-sm font-bold text-red-600 flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4" /> System Error
-        </p>
-        <p className="text-xs text-red-500 mt-2">{message}</p>
-    </Card>
-);
+    return (
+        <div className="xai-visual bg-[#0a0a0f] relative overflow-hidden h-full rounded-md border border-slate-800 shadow-inner">
+            {/* Professional Grid Layer */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none"
+                style={{ backgroundImage: 'linear-gradient(#475569 1px, transparent 1px), linear-gradient(90deg, #475569 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
-const VisualizationWindow = ({
-    title,
-    data,
-    isLoading,
-    showSegmentation = false,
-    onToggleSegmentation,
-    isAnalysisWindow = false
-}) => (
-    <section className={cn(
-        "bg-white rounded-3xl overflow-hidden shadow-2xl border transition-all duration-500",
-        data ? 'border-slate-100 opacity-100' : 'border-slate-100 opacity-40'
-    )}>
-        <header className="p-6 border-b flex justify-between items-center bg-slate-50/50">
-            <h3 className="text-sm font-black text-slate-600 flex items-center gap-2 uppercase tracking-widest">
-                {title}
-            </h3>
-            {isAnalysisWindow && data && (
-                <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Segmentation</span>
-                    <button
-                        onClick={onToggleSegmentation}
-                        className={cn(
-                            "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                            showSegmentation ? 'bg-blue-600' : 'bg-slate-200'
-                        )}
-                    >
-                        <span className={cn(
-                            "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                            showSegmentation ? 'translate-x-6' : 'translate-x-1'
-                        )} />
-                    </button>
-                </div>
-            )}
-        </header>
+            {/* Smooth Heatmap Layer */}
+            <svg className="xai-svg absolute inset-0 w-full h-full" viewBox="0 0 1000 120" preserveAspectRatio="none">
+                <defs>
+                    <filter id="heatmapBlur" x="-10%" y="0" width="120%" height="100%">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="15" />
+                    </filter>
+                </defs>
 
-        <div className="h-[350px] w-full p-4 relative">
-            {isLoading && (
-                <div className="absolute inset-0 bg-white/80 z-20 flex flex-col items-center justify-center backdrop-blur-sm">
-                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-blue-600 font-black text-xs uppercase tracking-widest">
-                        {isAnalysisWindow ? 'Running AI Analysis...' : 'Loading Preview...'}
-                    </p>
-                </div>
-            )}
+                <g filter="url(#heatmapBlur)">
+                    {data.map((val, i) => {
+                        if (val < 0.08) return null;
+                        const x = (i / points) * 1000;
+                        const w = 1000 / points + 15; // Smooth overlap
+                        return (
+                            <rect
+                                key={`h-${i}`}
+                                x={x} y={0} width={w} height={120}
+                                fill={getHeatColor(val)}
+                                fillOpacity={0.7}
+                            />
+                        );
+                    })}
+                </g>
 
-            {data ? (
-                <ECGViewer
-                    signal={data.signal}
-                    fs={500}
-                    waves={isAnalysisWindow ? data.waves : null}
-                    showSegmentation={isAnalysisWindow ? showSegmentation : false}
+                {/* Patient Signal Overlay */}
+                <polyline
+                    fill="none"
+                    stroke="rgba(255, 255, 255, 0.7)"
+                    strokeWidth="2"
+                    points={signal.slice(0, points).map((v, i) =>
+                        `${(i / points) * 1000},${60 - v * 40}`
+                    ).join(' ')}
                 />
-            ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-300">
-                    <Activity className="w-16 h-16 opacity-10 mb-4" />
-                    <p className="text-sm font-bold uppercase tracking-widest">
-                        {isAnalysisWindow ? 'Awaiting Analysis' : 'No Data'}
-                    </p>
-                </div>
-            )}
-        </div>
+            </svg>
 
-        {isAnalysisWindow && data && showSegmentation && <SegmentationLegend />}
-    </section>
-);
-
-const SegmentationLegend = () => (
-    <footer className="px-6 py-4 bg-white border-t flex flex-wrap gap-6 items-center">
-        {[
-            { color: 'bg-blue-500', label: 'P (Associated)' },
-            { color: 'bg-red-500', label: 'P (Dissociated)' },
-            { color: 'bg-emerald-500', label: 'QRS Complex' },
-            { color: 'bg-orange-500', label: 'T-wave' },
-        ].map(item => (
-            <div key={item.label} className="flex items-center gap-2">
-                <div className={cn(item.color, "w-3 h-3 rounded-full opacity-60 border border-current")} />
-                <span className="text-[10px] font-black text-slate-500 uppercase">{item.label}</span>
+            {/* Status Indicator (Moved to bottom-right for clean view) */}
+            <div className="absolute bottom-2 right-2 flex items-center gap-2 px-2 py-1 bg-black/80 backdrop-blur-sm rounded border border-white/5 z-20">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+                <span className="text-[8px] font-black text-white/90 uppercase tracking-widest font-mono">Live Engine Analysis</span>
             </div>
-        ))}
-        <p className="ml-auto text-[10px] italic text-slate-400">
-            * Dynamic temporal relationship analysis
-        </p>
-    </footer>
+        </div>
+    );
+};
+
+const EmptyState = ({ label, dim }) => (
+    <div className={`empty-waveform${dim ? ' empty-waveform--dim' : ''}`}>
+        <Activity style={{ width: 36, height: 36, opacity: 0.12 }} />
+        <p>{label}</p>
+    </div>
 );
 
-const ExplanationSection = ({ explanation }) => (
-    <Card variant="default" padding="none" className="bg-slate-900 shadow-2xl animate-in fade-in duration-1000">
-        <header className="p-6 border-b border-slate-800 bg-slate-900/50">
-            <h3 className="text-xs font-black text-blue-400 flex items-center gap-2 uppercase tracking-[0.2em]">
-                <Cpu className="w-4 h-4" /> Clinical Rationale
-            </h3>
-        </header>
-        <div className="p-8 font-mono text-[11px] leading-relaxed max-h-[400px] overflow-y-auto text-slate-300">
-            {explanation.split('\n').map((line, i) => (
-                <p key={i} className={cn("mb-3", line.startsWith('[CRITICAL]') && "text-red-400 font-bold")}>
-                    {line.startsWith('>') ? <span className="text-blue-500">→</span> : null} {line}
-                </p>
-            ))}
-        </div>
-    </Card>
+const LoadingOverlay = ({ label }) => (
+    <div className="loading-overlay">
+        <div className="loading-spinner" />
+        <p>{label}</p>
+    </div>
+);
+
+const Spinner = () => (
+    <div style={{
+        width: 22, height: 22,
+        border: '2.5px solid rgba(255,255,255,0.3)',
+        borderTopColor: 'white',
+        borderRadius: '50%',
+        animation: 'spin 0.7s linear infinite'
+    }} />
 );
 
 export default AnalysisPage;

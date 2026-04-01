@@ -1,10 +1,11 @@
 import React from 'react';
 import { useSystemHealth } from "../../hooks/useSystemHealth";
 import { cn } from "../../utils/cn";
+import { Activity } from 'lucide-react';
 
 /**
- * Navbar component extracted from the main app logic.
- * Handles primary navigation and global system status visibility.
+ * Navbar — clinical-grade top navigation bar.
+ * Matches the wireframe: logo left, nav tabs centre-right, status indicator right.
  */
 const Navbar = ({ currentView, onNavigate }) => {
     const isOnline = useSystemHealth();
@@ -12,50 +13,51 @@ const Navbar = ({ currentView, onNavigate }) => {
     const navItems = [
         { id: 'home', label: 'Home' },
         { id: 'instructions', label: 'Instructions' },
-        { id: 'analysis', label: 'Upload ECG' },
+        { id: 'analysis', label: 'Analysis' },
+        { id: 'about', label: 'About' },
     ];
 
     return (
-        <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100">
-            <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-                {/* Brand Logo */}
-                <div
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => onNavigate('home')}
-                >
-                    <div className="w-10 h-10 border-2 border-blue-600 rounded-full flex items-center justify-center">
-                        <div className="w-6 h-6 border-b-2 border-blue-600 rounded-full animate-spin-slow"></div>
-                    </div>
-                    <h1 className="text-2xl font-black text-blue-700 tracking-tight">AVScan</h1>
-                </div>
+        <nav className="navbar">
+            <div className="navbar-inner">
 
-                {/* Navigation Links */}
-                <div className="flex items-center gap-4">
+                {/* Brand */}
+                <button className="navbar-brand" onClick={() => onNavigate('home')}>
+                    <div className="navbar-logo">
+                        <Activity className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="navbar-brand-name">AtrioNet</span>
+                </button>
+
+                {/* Navigation tabs */}
+                <div className="navbar-tabs">
                     {navItems.map((item) => (
                         <button
                             key={item.id}
                             onClick={() => onNavigate(item.id)}
                             className={cn(
-                                "px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-sm border",
-                                currentView === item.id
-                                    ? "bg-blue-600 text-white shadow-blue-200 border-blue-600"
-                                    : "bg-white text-slate-700 border-transparent hover:border-slate-200"
+                                'navbar-tab',
+                                currentView === item.id && 'navbar-tab--active'
                             )}
                         >
                             {item.label}
                         </button>
                     ))}
+                </div>
 
-                    {/* System Health Indicator */}
-                    <div
+                {/* Right side — status */}
+                <div className="navbar-right">
+                    <span className="system-status-label">
+                        {isOnline ? 'System Online' : 'System Offline'}
+                    </span>
+                    <span
                         className={cn(
-                            "ml-4 w-3 h-3 rounded-full transition-shadow",
-                            isOnline
-                                ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
-                                : "bg-red-500"
+                            'status-dot',
+                            isOnline ? 'status-dot--online' : 'status-dot--offline'
                         )}
-                        title={isOnline ? 'System Online' : 'System Offline'}
+                        title={isOnline ? 'Backend Connected' : 'Backend Offline'}
                     />
+                    <span className="navbar-version">v1.0</span>
                 </div>
             </div>
         </nav>

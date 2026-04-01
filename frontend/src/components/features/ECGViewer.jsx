@@ -55,6 +55,7 @@ const ECGViewer = ({
     return (
         <div className={cn("w-full h-full bg-white", className)}>
             <Plot
+                // ... same plot config ...
                 data={[
                     {
                         x: time,
@@ -119,8 +120,26 @@ const ECGViewer = ({
                 }}
                 className="w-full h-full"
             />
+
+            {/* Clinical Legend */}
+            {showSegmentation && (
+                <div className="flex items-center justify-center gap-6 py-3 border-t border-slate-100 bg-slate-50/50 mt-auto">
+                    <LegendItem color="rgba(59, 130, 246, 0.4)" label="P-wave (Assoc)" />
+                    <LegendItem color="rgba(239, 68, 68, 0.4)" label="P-wave (Dissoc)" />
+                    <LegendItem color="rgba(16, 185, 129, 0.4)" label="QRS Complex" />
+                    <LegendItem color="rgba(245, 158, 11, 0.4)" label="T-wave" />
+                </div>
+            )}
         </div>
     );
 };
+
+const LegendItem = ({ color, label }) => (
+    <div className="flex items-center gap-2">
+        <div style={{ backgroundColor: color, border: `1px solid ${color.replace('0.4', '0.6')}` }} 
+             className="w-3 h-3 rounded-sm shadow-sm" />
+        <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{label}</span>
+    </div>
+);
 
 export default ECGViewer;
