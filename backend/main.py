@@ -44,7 +44,8 @@ async def startup_event():
         print(f"Loading model from {CHECKPOINT_PATH}...")
         predictor = AVBlockPredictor(checkpoint=CHECKPOINT_PATH)
     else:
-        print(f"Warning: Checkpoint {CHECKPOINT_PATH} not found. API running in restricted mode.")
+        print(f"Warning: Checkpoint {CHECKPOINT_PATH} not found. API running in FALLBACK (restricted) mode.")
+        predictor = AVBlockPredictor(checkpoint=None)
 
 @app.get("/health")
 async def health_check():
@@ -161,6 +162,7 @@ async def analyze_ecg(file: UploadFile = File(...)):
             },
             "report_id": report_id,
             "explanation": result['xai']['explanation'],
+            "heatmap": result['xai']['heatmap'], # Include XAI Heatmap
             "signal": viz_signal.tolist(),
             "waves": scaled_waves
         }
