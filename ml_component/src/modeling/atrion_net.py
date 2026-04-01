@@ -51,8 +51,9 @@ class AttentionalInception(nn.Module):
 
 class AtrionNetHybrid(nn.Module):
     """
-    V4.0 RESEARCH ARCHITECTURE: 
-    Multi-Scale CNN + Bidirectional Temporal Modeling + Attentional Gating.
+    V5.0 RESEARCH ARCHITECTURE: 
+    Multi-Scale CNN + Dilated Convolutional Context + Attentional Gating.
+    Replaced the unstable 625-step BiLSTM with a highly stable Dilated CNN Bottleneck.
     """
     def __init__(self, in_channels=12, hidden_dim=256):
         super(AtrionNetHybrid, self).__init__()
@@ -65,14 +66,15 @@ class AtrionNetHybrid(nn.Module):
         self.enc3 = AttentionalInception(128, 256)
         self.pool3 = nn.MaxPool1d(2)
         
-        # 2. Bridge: Global Temporal Context (BiLSTM)
-        # Sequence length: 625 samples
-        self.lstm = nn.LSTM(input_size=256, 
-                           hidden_size=hidden_dim, 
-                           num_layers=1, 
-                           batch_first=True, 
-                           bidirectional=True)
-        self.bridge_proj = nn.Conv1d(hidden_dim * 2, 512, kernel_size=1)
+        # 2. Bridge: Dilated Convolutional Context (Solves BiLSTM Vanishing Gradients)
+        # Sequence length: 625 samples. Dilations [1, 2, 4, 8] cover massive receptive fields.
+        self.bridge1 = nn.Conv1d(256, 512, kernel_size=3, padding=1, dilation=1)
+        self.bridge_bn1 = nn.BatchNorm1d(512)
+        self.bridge2 = nn.Conv1d(512, 512, kernel_size=3, padding=2, dilation=2)
+        self.bridge_bn2 = nn.BatchNorm1d(512)
+        self.bridge3 = nn.Conv1d(512, 512, kernel_size=3, padding=4, dilation=4)
+        self.bridge_bn3 = nn.BatchNorm1d(512)
+        self.bridge_relu = nn.ReLU()
         
         # 3. Decoder
         self.up3 = nn.ConvTranspose1d(512, 256, kernel_size=2, stride=2)
@@ -82,7 +84,7 @@ class AtrionNetHybrid(nn.Module):
         self.up1 = nn.ConvTranspose1d(128, 64, kernel_size=2, stride=2)
         self.dec1 = AttentionalInception(128, 64)
 
-        # 4. Refined Output Heads (with Dropout for better generalization)
+        # 4. Refined Output Heads
         self.heatmap_head = nn.Sequential(
             nn.Conv1d(64, 32, 3, padding=1), nn.BatchNorm1d(32), nn.ReLU(),
             nn.Dropout(0.1), nn.Conv1d(32, 1, 1), nn.Sigmoid()
@@ -101,10 +103,11 @@ class AtrionNetHybrid(nn.Module):
         e2 = self.enc2(self.pool1(e1))
         e3 = self.enc3(self.pool2(e2))
         
-        # BiLSTM Context
-        b_in = self.pool3(e3).transpose(1, 2)
-        b_out, _ = self.lstm(b_in)
-        b = self.bridge_proj(b_out.transpose(1, 2))
+        # Dilated CNN Context (Stable over long sequences)
+        b = self.pool3(e3)
+        b = self.bridge_relu(self.bridge_bn1(self.bridge1(b)))
+        b = self.bridge_relu(self.bridge_bn2(self.bridge2(b)))
+        b = self.bridge_relu(self.bridge_bn3(self.bridge3(b)))
         
         # Decoder
         d3 = self.dec3(torch.cat([self.up3(b), e3], dim=1))
