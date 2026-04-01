@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frontend Documentation | AtrionNet</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { background-image: none; background-color: #020617; }
+    .sidebar { width: 300px; height: 100vh; background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(8px); position: fixed; left: 0; top: 0; padding: 40px 20px; border-right: 1px solid rgba(255,255,255,0.1); overflow-y: auto; }
+    .content { margin-left: 320px; padding: 60px; max-width: 900px; }
+    .nav-item { display: block; padding: 12px 20px; border-radius: 12px; color: var(--text-muted); text-decoration: none; margin-bottom: 5px; transition: 0.3s; }
+    .nav-item:hover, .nav-item.active { background: rgba(0, 242, 254, 0.1); color: var(--primary); }
+    h2 { color: var(--primary); margin: 40px 0 20px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    pre { border-radius: 16px !important; margin: 20px 0 !important; background: #0f172a !important; border: 1px solid rgba(255,255,255,0.1) !important; font-family: 'JetBrains Mono', monospace !important; }
+    .file-card { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 20px; border-left: 4px solid var(--accent); margin-bottom: 15px; }
+    .back-btn { display: inline-flex; align-items: center; color: var(--text-muted); text-decoration: none; margin-bottom: 30px; font-weight: 600; }
+    .back-btn:hover { color: var(--text); }
+    .back-btn i { margin-right: 10px; }
+    .tech-pill { display: inline-block; padding: 4px 12px; border-radius: 6px; background: rgba(244, 114, 182, 0.1); color: var(--accent); font-size: 0.85rem; margin-right: 8px; margin-bottom: 8px; }
+    .ux-feature { display: flex; align-items: flex-start; margin-bottom: 20px; }
+    .ux-feature i { margin-right: 15px; font-size: 1.2rem; color: var(--accent); margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <a href="../index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Home</a>
+    <h3 style="margin-bottom: 25px; font-size: 1.2rem;">Frontend UI/UX</h3>
+    <a href="#overview" class="nav-item">Interface Philosophy</a>
+    <a href="#tech" class="nav-item">Core Tech Stack</a>
+    <a href="#pages" class="nav-item">Page Architecture</a>
+    <a href="#components" class="nav-item">Feature Modules</a>
+    <a href="#viz" class="nav-item">Visualization System</a>
+  </div>
+
+  <div class="content">
+    <section id="overview">
+      <h1 style="font-size: 2.5rem; margin-bottom: 20px;">Frontend & User Experience</h1>
+      <p style="font-size: 1.1rem; color: var(--text-muted);">The AtrionNet Clinical Dashboard is a modern, high-intensity interface designed for cardiologists to review and validate complex AV-block diagnoses in record time.</p>
+      
+      <div style="margin-top: 30px;">
+        <h3>UI Design Principles</h3>
+        <div style="margin-top: 20px;">
+          <div class="ux-feature"><i class="fas fa-eye"></i> <div><strong>Diagnostic Focus:</strong> High-contrast ECG plotting with interactive overlays for P-wave and QRS complex masks.</div></div>
+          <div class="ux-feature"><i class="fas fa-fire"></i> <div><strong>XAI Accessibility:</strong> Visualizing AI confidence scores directly on the signal timeline through heatmap gradients.</div></div>
+          <div class="ux-feature"><i class="fas fa-mobile-alt"></i> <div><strong>Responsive Grid:</strong> Single-screen clinical workflow that adapts from standard monitors to widescreen diagnostic stations.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tech">
+      <h2>Advanced Technology Stack</h2>
+      <div style="margin-top: 15px;">
+        <span class="tech-pill"><i class="fab fa-react"></i> React 18+</span>
+        <span class="tech-pill"><i class="fas fa-wind"></i> Tailwind CSS 3.0</span>
+        <span class="tech-pill"><i class="fas fa-bolt"></i> Vite JS</span>
+        <span class="tech-pill"><i class="fas fa-wave-square"></i> Canvas/SVG Overlay</span>
+        <span class="tech-pill"><i class="fas fa-infinity"></i> Axios / TanStack Query</span>
+      </div>
+    </section>
+
+    <section id="pages">
+      <h2>Page-Level Architecture</h2>
+      <div class="file-card">
+        <h4><i class="fas fa-home"></i> src/pages/HomePage.jsx</h4>
+        <p>Entry portal for uploading ECG studies. Handles drag-and-drop validation for industrial-standard signal formats (.npy).</p>
+      </div>
+      <div class="file-card">
+        <h4><i class="fas fa-microscope"></i> src/pages/AnalysisPage.jsx</h4>
+        <p>The "Cockpit" of the system. Displays real-time analysis results, AI-generated heatmaps, and provides access to medical report downloads. Integrated with complex state-management to handle large-scale signal data transitions.</p>
+      </div>
+      <div class="file-card">
+        <h4><i class="fas fa-book-medical"></i> src/pages/InstructionsPage.jsx</h4>
+        <p>Resource hub for clinicians, detailing the clinical interpretation of the AI's "severity" metrics and color-coding schemes.</p>
+      </div>
+    </section>
+
+    <section id="components">
+      <h2>Feature & Structural Components</h2>
+      <div class="file-card">
+        <h4><i class="fas fa-cubes"></i> src/components/features/ECGViewer.jsx</h4>
+        <p>Proprietary component for rendering physiological signals. Implements high-performance scaling to ensure 500Hz signals remain fluid during browser interactions.</p>
+      </div>
+      <div class="file-card">
+        <h4><i class="fas fa-chart-bar"></i> src/components/features/AnalysisMetrics.jsx</h4>
+        <p>Dynamic dashboard component for heart-rate variability, PR-interval consistency, and diagnostic severity indicators.</p>
+      </div>
+      <div class="file-card">
+        <h4><i class="fas fa-link"></i> src/services/api.js</h4>
+        <p>Centralized Axios instance. Manages environment-aware API URL resolution and response interceptors for clinical-grade error handling.</p>
+      </div>
+    </section>
+
+    <section id="viz">
+      <h2>Signal Visualization System</h2>
+      <p>The system uses a <strong>Multi-Layer Visualization Strategy</strong>:</p>
+      <ul style="margin: 20px 0; padding-left: 20px; color: var(--text-muted);">
+        <li style="margin-bottom: 10px;"><strong>Base Layer:</strong> Raw analog signal samples (subsampled for performance).</li>
+        <li style="margin-bottom: 10px;"><strong>Mask Layer:</strong> P-Associated, P-Dissociated, and QRS region highlights.</li>
+        <li style="margin-bottom: 10px;"><strong>Activation Layer:</strong> AI Heatmap showing morphological relevance of various signal peaks to the final diagnosis.</li>
+      </ul>
+    </section>
+
+    <footer style="margin-top: 100px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; color: var(--text-muted);">
+      <p>Frontend UI Technical Reference &bull; Version 4.8 Modern</p>
+    </footer>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+</body>
+</html>

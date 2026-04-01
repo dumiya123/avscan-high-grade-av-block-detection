@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backend Documentation | AtrionNet</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { background-image: none; background-color: #020617; }
+    .sidebar { width: 300px; height: 100vh; background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(8px); position: fixed; left: 0; top: 0; padding: 40px 20px; border-right: 1px solid rgba(255,255,255,0.1); overflow-y: auto; }
+    .content { margin-left: 320px; padding: 60px; max-width: 900px; }
+    .nav-item { display: block; padding: 12px 20px; border-radius: 12px; color: var(--text-muted); text-decoration: none; margin-bottom: 5px; transition: 0.3s; }
+    .nav-item:hover, .nav-item.active { background: rgba(0, 242, 254, 0.1); color: var(--primary); }
+    h2 { color: var(--primary); margin: 40px 0 20px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    pre { border-radius: 16px !important; margin: 20px 0 !important; background: #0f172a !important; border: 1px solid rgba(255,255,255,0.1) !important; font-family: 'JetBrains Mono', monospace !important; }
+    .file-card { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 20px; border-left: 4px solid var(--secondary); margin-bottom: 15px; }
+    .back-btn { display: inline-flex; align-items: center; color: var(--text-muted); text-decoration: none; margin-bottom: 30px; font-weight: 600; }
+    .back-btn:hover { color: var(--text); }
+    .back-btn i { margin-right: 10px; }
+    .endpoint-card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+    .method { padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; margin-right: 10px; }
+    .get { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid var(--success); }
+    .post { background: rgba(79, 172, 254, 0.1); color: var(--secondary); border: 1px solid var(--secondary); }
+    .tag-blue { background: rgba(79, 172, 254, 0.1); color: var(--secondary); padding: 4px 12px; border-radius: 6px; font-size: 0.85rem; margin-right: 8px; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <a href="../index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Home</a>
+    <h3 style="margin-bottom: 25px; font-size: 1.2rem;">Backend Engine</h3>
+    <a href="#overview" class="nav-item">Core Engine Overview</a>
+    <a href="#endpoints" class="nav-item">API Endpoints</a>
+    <a href="#code" class="nav-item">Code Reference</a>
+    <a href="#security" class="nav-item">Security & Middleware</a>
+    <a href="#workflow" class="nav-item">Analysis Workflow</a>
+  </div>
+
+  <div class="content">
+    <section id="overview">
+      <h1 style="font-size: 2.5rem; margin-bottom: 20px;">Backend Architecture</h1>
+      <p style="font-size: 1.1rem; color: var(--text-muted);">The backend is built as a high-performance RESTful API using FastAPI, serving as the bridge between the React frontend and the PyTorch ML Inference engine.</p>
+      
+      <div style="margin-top: 30px;">
+        <h3>Technologies Used</h3>
+        <div style="margin-top: 15px;">
+          <span class="tag-blue"><i class="fas fa-bolt"></i> FastAPI (Asynchronous)</span>
+          <span class="tag-blue"><i class="fas fa-rocket"></i> Uvicorn (ASGI)</span>
+          <span class="tag-blue"><i class="fas fa-file-pdf"></i> FPDF / ReportLab</span>
+          <span class="tag-blue"><i class="fas fa-expand"></i> Pydantic (Data Models)</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="endpoints">
+      <h2>API Endpoints Specification</h2>
+      
+      <div class="endpoint-card">
+        <span class="method get">GET</span> <code>/health</code>
+        <p style="margin-top: 10px; font-size: 0.9rem; color: var(--text-muted);">Checks the status of the server and confirms the ML model is correctly loaded into GPU memory.</p>
+      </div>
+
+      <div class="endpoint-card">
+        <span class="method post">POST</span> <code>/preview</code>
+        <p style="margin-top: 10px; font-size: 0.9rem; color: var(--text-muted);">Lightweight endpoint for initial signal visualization. Returns a subsampled version of the ECG for frontend plotting without full AI analysis.</p>
+      </div>
+
+      <div class="endpoint-card">
+        <span class="method post">POST</span> <code>/analyze</code>
+        <p style="margin-top: 10px; font-size: 0.9rem; color: var(--text-muted);">The primary inference endpoint. Triggers the full Attentional-AtrionNet v5.0 pipeline. Generates AI heatmaps, diagnostic labels, and clinical PDF reports.</p>
+      </div>
+
+      <div class="endpoint-card">
+        <span class="method get">GET</span> <code>/report/{report_id}</code>
+        <p style="margin-top: 10px; font-size: 0.9rem; color: var(--text-muted);">Serves dynamically generated medical PDF reports for clinical download.</p>
+      </div>
+    </section>
+
+    <section id="code">
+      <h2>Code & File Purpose</h2>
+      <div class="file-card">
+        <h4><i class="fas fa-file-code"></i> backend/main.py</h4>
+        <p>The core router and orchestration layer. Managed CORS, file uploads, and directs data to the `AVBlockPredictor` in the ML layer. This file ensures that GPU memory is managed efficiently by initializing the model on startup.</p>
+      </div>
+      <div class="file-card">
+        <h4><i class="fas fa-folder-open"></i> backend/reports/</h4>
+        <p>Directory for persistent storage of generated PDF medical reports. These are accessible via unique report identifiers generated during analysis.</p>
+      </div>
+      <div class="file-card">
+        <h4><i class="fas fa-folder-open"></i> backend/uploads/</h4>
+        <p>Temporary buffer for incoming physiological signals (.npy files). Files are automatically purged after successful analysis to maintain HIPAA-compliant data handling practices.</p>
+      </div>
+    </section>
+
+    <section id="#workflow">
+      <h2>System Analysis Workflow</h2>
+      <p>The backend follows a strict **"Load-Process-Generate"** pattern:</p>
+      <ol style="margin-top: 20px; color: var(--text-muted);">
+        <li style="margin-bottom: 10px;">Receive binary file (.npy) via multipart form data.</li>
+        <li style="margin-bottom: 10px;">Perform signal integrity check (Size & Shape validation).</li>
+        <li style="margin-bottom: 10px;">Execute synchronous AI inference on GPU.</li>
+        <li style="margin-bottom: 10px;">Post-process results (Scaling heatmaps, calculating heart rate).</li>
+        <li style="margin-bottom: 10px;">Generate PDF Report and return structured JSON to Frontend.</li>
+      </ol>
+    </section>
+
+    <footer style="margin-top: 100px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; color: var(--text-muted);">
+      <p>Backend API Technical Reference &bull; Version 1.2 Clinical</p>
+    </footer>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</body>
+</html>

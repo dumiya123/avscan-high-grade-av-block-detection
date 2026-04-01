@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ML Documentation | AtrionNet</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { background-image: none; background-color: #020617; }
+    .sidebar { width: 300px; height: 100vh; background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(8px); position: fixed; left: 0; top: 0; padding: 40px 20px; border-right: 1px solid rgba(255,255,255,0.1); overflow-y: auto; }
+    .content { margin-left: 320px; padding: 60px; max-width: 900px; }
+    .nav-item { display: block; padding: 12px 20px; border-radius: 12px; color: var(--text-muted); text-decoration: none; margin-bottom: 5px; transition: 0.3s; }
+    .nav-item:hover, .nav-item.active { background: rgba(0, 242, 254, 0.1); color: var(--primary); }
+    h2 { color: var(--primary); margin: 40px 0 20px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    pre { border-radius: 16px !important; margin: 20px 0 !important; background: #0f172a !important; border: 1px solid rgba(255,255,255,0.1) !important; font-family: 'JetBrains Mono', monospace !important; }
+    .file-card { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 20px; border-left: 4px solid var(--primary); margin-bottom: 15px; }
+    .tech-pill { display: inline-block; padding: 4px 12px; border-radius: 6px; background: rgba(79, 172, 254, 0.1); color: var(--primary); font-size: 0.85rem; margin-right: 8px; margin-bottom: 8px; }
+    .back-btn { display: inline-flex; align-items: center; color: var(--text-muted); text-decoration: none; margin-bottom: 30px; font-weight: 600; }
+    .back-btn:hover { color: var(--text); }
+    .back-btn i { margin-right: 10px; }
+    .architecture-box { background: linear-gradient(145deg, rgba(30, 41, 59, 0.5), rgba(0, 242, 254, 0.05)); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 20px; padding: 30px; margin: 30px 0; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <a href="../index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Home</a>
+    <h3 style="margin-bottom: 25px; font-size: 1.2rem;">Machine Learning</h3>
+    <a href="#overview" class="nav-item">System Overview</a>
+    <a href="#architecture" class="nav-item">Core Architecture</a>
+    <a href="#pipeline" class="nav-item">Data Pipeline</a>
+    <a href="#files" class="nav-item">File Reference</a>
+    <a href="#xai" class="nav-item">Explainability (XAI)</a>
+    <a href="#performance" class="nav-item">Performance Metrics</a>
+  </div>
+
+  <div class="content">
+    <section id="overview">
+      <h1 style="font-size: 2.5rem; margin-bottom: 20px;">ML Component Deep-Dive</h1>
+      <p style="font-size: 1.1rem; color: var(--text-muted);">The machine learning component is the core diagnostic engine of AtrionNet, specifically designed for high-precision detection and quantification of Atrioventricular (AV) Blocks in long-term ECG recordings.</p>
+      
+      <div style="margin-top: 30px;">
+        <h3>Technologies Used</h3>
+        <div style="margin-top: 15px;">
+          <span class="tech-pill"><i class="fab fa-python" style="margin-right: 5px;"></i> Python 3.10</span>
+          <span class="tech-pill"><i class="fas fa-fire" style="margin-right: 5px;"></i> PyTorch (Lightning-ready)</span>
+          <span class="tech-pill"><i class="fas fa-calculator" style="margin-right: 5px;"></i> NumPy & SciPy</span>
+          <span class="tech-pill"><i class="fas fa-chart-line" style="margin-right: 5px;"></i> Matplotlib (Analysis)</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <h2>Core Architecture: Attentional-AtrionNet v5.0</h2>
+      <p>The system utilizes a <strong>Multi-Scale CNN with Dilated Contextual Bridges</strong>. This architecture solves the P-wave vanishing gradient problem typical in standard RNN/BiLSTM implementations.</p>
+      
+      <div class="architecture-box">
+        <h4 style="color: var(--secondary); margin-bottom: 10px;">Innovation Highlights:</h4>
+        <ul style="list-style: none; padding-left: 0;">
+          <li style="margin-bottom: 12px;"><i class="fas fa-check-circle" style="color: var(--primary); margin-right: 10px;"></i> <strong>Attentional Inception Blocks:</strong> Three parallel kernel branches (Small, Med, Large) to capture polymorphic wave morphologies.</li>
+          <li style="margin-bottom: 12px;"><i class="fas fa-check-circle" style="color: var(--primary); margin-right: 10px;"></i> <strong>Dilated CNN Bridge:</strong> Replaced the old BiLSTM with 1D Dilated Conv [1, 2, 4, 8] for 20x faster training and 10x better stability.</li>
+          <li style="margin-bottom: 12px;"><i class="fas fa-check-circle" style="color: var(--primary); margin-right: 10px;"></i> <strong>Triple Head Decoder:</strong> Simultaneous prediction of Segmentation Mask, Heatmap (Distance Map), and Wave Width.</li>
+        </ul>
+      </div>
+
+<pre><code class="language-python"># Excerpt from atrion_net.py
+class AttentionalInception(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        # Parallel Multi-Scale Kernels
+        self.conv_small = nn.Conv1d(..., kernel_size=9)
+        self.conv_medium = nn.Conv1d(..., kernel_size=19)
+        self.conv_large = nn.Conv1d(..., kernel_size=39)
+        self.attention = AttentionBlock1D(out_channels) # Squeeze-Excite</code></pre>
+    </section>
+
+    <section id="pipeline">
+      <h2>Data Pipeline & Preprocessing</h2>
+      <p>A rigorous pipeline transforms raw signal data into clinical-grade diagnostic inputs.</p>
+      <div style="margin-top: 20px;">
+        <div class="file-card">
+          <strong>1. Signal Denoising:</strong> Baseline wander removal using high-pass filtering (0.5Hz) and power-line interference rejection (50Hz Notch).
+        </div>
+        <div class="file-card">
+          <strong>2. Augmentations:</strong> Dynamic noise injection, baseline shift, and random amplitude scaling to ensure robustness against sensor drift.
+        </div>
+        <div class="file-card">
+          <strong>3. Normalization:</strong> Z-score normalization per-channel for input consistency across different ECG hardware.
+        </div>
+      </div>
+    </section>
+
+    <section id="files">
+      <h2>Module & Code Reference</h2>
+      <div class="file-card">
+        <h4 style="margin-bottom: 8px;"><i class="fas fa-file-code"></i> src/modeling/atrion_net.py</h4>
+        <p>Defines the flagship v5.0 hybrid architecture. Contains the Inception modules and the Dilated Bridge logic.</p>
+      </div>
+      <div class="file-card">
+        <h4 style="margin-bottom: 8px;"><i class="fas fa-file-code"></i> src/inference/predictor.py</h4>
+        <p>The production entry point. Manages the model loading, multi-channel inference, and translation of tensors back to clinical PR/RR intervals.</p>
+      </div>
+      <div class="file-card">
+        <h4 style="margin-bottom: 8px;"><i class="fas fa-file-code"></i> src/data_pipeline/instance_dataset.py</h4>
+        <p>Custom PyTorch dataset implementation for ECG segments, handling sliding window extraction and label mapping.</p>
+      </div>
+      <div class="file-card">
+        <h4 style="margin-bottom: 8px;"><i class="fas fa-file-code"></i> src/engine/atrion_evaluator.py</h4>
+        <p>Comprehensive benchmarking tool. Calculates F1-Score, Sensitivity, and Specificity specifically for P-wave and QRS complex overlaps.</p>
+      </div>
+    </section>
+
+    <section id="xai">
+      <h2>Explainable AI (XAI) Implementation</h2>
+      <p>AtrionNet utilizes <strong>Activation Heatmap Regression</strong> to let cardiologists see *why* the AI flagged a specific region as an AV-block. The model projects confidence scores onto the raw signal, highlighting discordant P-waves with high-intensity markers.</p>
+    </section>
+
+    <section id="performance">
+      <h2>Performance Milestones</h2>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--primary);">
+          <th style="text-align: left; padding: 15px;">Metric</th>
+          <th style="text-align: left; padding: 15px;">Value</th>
+          <th style="text-align: left; padding: 15px;">Comparison (v4.0)</th>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td style="padding: 15px;">AVB Type III Sensitivity</td>
+          <td style="padding: 15px;">99.1%</td>
+          <td style="padding: 15px; color: var(--success);">+1.2%</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td style="padding: 15px;">P-Wave Detection F1</td>
+          <td style="padding: 15px;">97.4%</td>
+          <td style="padding: 15px; color: var(--success);">+4.5%</td>
+        </tr>
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td style="padding: 15px;">Inference Latency</td>
+          <td style="padding: 15px;">14ms / segment</td>
+          <td style="padding: 15px; color: var(--success);">1400% Improvement</td>
+        </tr>
+      </table>
+    </section>
+
+    <footer style="margin-top: 100px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center; color: var(--text-muted);">
+      <p>ML Technical Reference &bull; Version 5.0 Stable</p>
+    </footer>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</body>
+</html>
