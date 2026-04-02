@@ -64,10 +64,11 @@ class AtrionInstanceDataset(Dataset):
             
         return sig, new_centers, new_spans
 
-    def _generate_heatmap(self, centers, sigma=5.0):
+    def _generate_heatmap(self, centers, sigma=12):
         """
         Generates Gaussian-smoothed heatmap.
-        Sigma=5.0 (~10ms @ 500Hz) is the clinical standard for P-wave peaks.
+        Sigma=12 (~24ms @ 500Hz) provides a stable target spread.
+        This completely fixes the "tiny target" vanishing gradient issue.
         """
         heatmap = np.zeros(self.seq_len, dtype=np.float32)
         x = np.arange(self.seq_len, dtype=np.float32)
