@@ -1,65 +1,81 @@
 """
-AtrionNet Research Visualization Utility v3.0
-=============================================
-Generates publication-quality plots (Loss, Accuracy, ROC).
+AtrionNet Research Visualization Utility v4.0 (Official Thesis Edition)
+=====================================================================
+Generates high-resolution academic plots (Loss, Accuracy, ROC, CM).
 """
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import os
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import confusion_matrix, roc_curve, auc
 
-# Scientific Plotting Configuration
-plt.style.use('classic') # Traditional academic style
+# Standard Academic Aesthetics
 plt.rcParams['font.family'] = 'serif'
-plt.rcParams['axes.grid'] = True
+plt.rcParams['axes.titlesize'] = 14
+plt.rcParams['axes.labelsize'] = 12
+plt.style.use('seaborn-v0_8-paper') # Robust, clean style
 
-def save_publication_plots(history, test_metrics, plot_dir):
-    """Generates all academic-standard plots for Chapter 8."""
-    os.makedirs(plot_dir, exist_ok=True)
-    epochs = range(1, len(history['train_loss']) + 1)
+def save_research_plots(history, test_results, save_dir, model_name, epochs, batch_size):
+    """Generates the full suite of plots for a specific experiment setup."""
+    os.makedirs(save_dir, exist_ok=True)
+    e_range = range(1, len(history['train_loss']) + 1)
+    title_suffix = f"({epochs} epochs, batch {batch_size})"
+
+    # 1. ACCURACY & LOSS DUAL PLOT (Screenshot 1 Style)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
-    # 1. LOSS CURVE (PROPOSED APPROACH)
-    plt.figure(figsize=(10, 6))
-    plt.plot(epochs, history['train_loss'], label='Training Loss', color='blue', linewidth=2)
-    plt.plot(epochs, history['val_loss'], label='Validation Loss', color='red', linestyle='--', linewidth=2)
-    plt.title("AtrionNet Hybrid: Learning Convergence (Loss Analysis)")
-    plt.xlabel("Training Epochs")
-    plt.ylabel("Loss Magnitude")
-    plt.legend()
+    # Loss Column
+    ax1.plot(e_range, history['train_loss'], label='Train Loss', color='#1f77b4', linewidth=2)
+    ax1.plot(e_range, history['val_loss'], label='Validation Loss', color='#ff7f0e', linestyle='--', linewidth=2)
+    ax1.set_title(f"{model_name} - Loss Evolution\n{title_suffix}")
+    ax1.set_xlabel("Epochs")
+    ax1.set_ylabel("Loss Magnitude")
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    # Accuracy Column 
+    # (Note: In instance detection, we use F1-Score as the Accuracy proxy)
+    if 'val_acc' in history and history['val_acc']:
+        ax2.plot(e_range, history['train_acc'], label='Train Accuracy', color='#1f77b4', linewidth=2)
+        ax2.plot(e_range, history['val_acc'], label='Validation Accuracy', color='#d62728', linewidth=2)
+        ax2.set_title(f"{model_name} - Accuracy Evolution\n{title_suffix}")
+        ax2.set_xlabel("Epochs")
+        ax2.set_ylabel("Percentage (%)")
+        ax2.legend()
+        ax2.grid(True, alpha=0.3)
+    
     plt.tight_layout()
-    plt.savefig(f"{plot_dir}/loss_curve.png", dpi=300)
+    plt.savefig(f"{save_dir}/learning_curves.png", dpi=300)
     plt.close()
 
-    # 2. ACCURACY/F1 CURVE
-    if 'val_acc' in history and history['val_acc']:
-        plt.figure(figsize=(10, 6))
-        plt.plot(epochs, history['val_acc'], label='Validation Accuracy', color='green', linewidth=2)
-        plt.title("Model Robustness: Detection Accuracy Evolution")
-        plt.xlabel("Epochs")
-        plt.ylabel("Accuracy (%)")
-        plt.legend()
+    # 2. CONFUSION MATRIX (Appendix F Style)
+    if 'y_true' in test_results and 'y_pred' in test_results:
+        plt.figure(figsize=(10, 8))
+        cm = confusion_matrix(test_results['y_true'], test_results['y_pred'])
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=True)
+        plt.title(f"Confusion Matrix: {model_name}\n {epochs} Epochs - Batch Size {batch_size}")
+        plt.xlabel("Predicted Labels")
+        plt.ylabel("True Labels")
         plt.tight_layout()
-        plt.savefig(f"{plot_dir}/accuracy_curve.png", dpi=300)
+        plt.savefig(f"{save_dir}/confusion_matrix.png", dpi=300)
         plt.close()
 
-    # 3. ROC CURVE (SENSITIVITY VS SPECIFICITY)
-    # Generated from aggregated evaluation metrics
-    if test_metrics:
-        print("STATUS: Generating Research-Grade ROC Analysis...")
-        # (ROC calculation logic elided here for brevity, 
-        # normally uses score arrays from evaluation loop)
-        # Placeholder for visual style
+    # 3. ROC CURVES (Professional Clinical Style)
+    if 'y_scores' in test_results:
         plt.figure(figsize=(8, 8))
-        plt.plot([0, 1], [0, 1], 'k--', alpha=0.5)
-        plt.plot(np.linspace(0, 1, 100), 1 - (1 - np.linspace(0, 1, 100))**2, color='darkorange', label='AtrionNet Hybrid (AUC=0.94)')
-        plt.title("Receiver Operating Characteristic (ROC): P-wave Detection")
-        plt.xlabel("False Positive Rate")
-        plt.ylabel("True Positive Rate")
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(f"{plot_dir}/roc_curve.png", dpi=300)
+        fpr, tpr, _ = roc_curve(test_results['y_true'], test_results['y_scores'])
+        roc_auc = auc(fpr, tpr)
+        plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'AtrionNet (AUC = {roc_auc:.4f})')
+        plt.plot([0, 1], [0, 1], color='navy', lw=1, linestyle='--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title(f'ROC Analysis: {model_name}\n({title_suffix})')
+        plt.legend(loc="lower right")
+        plt.grid(True, alpha=0.2)
+        plt.savefig(f"{save_dir}/roc_analysis.png", dpi=300)
         plt.close()
 
-    print(f"INFO: All academic visualizations saved to {plot_dir}")
+    print(f"INFO: Research visualizations for {title_suffix} exported successfully.")
