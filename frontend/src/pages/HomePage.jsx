@@ -2,7 +2,7 @@ import React from 'react';
 import { Activity, FileText, Cpu } from 'lucide-react';
 
 const HomePage = ({ onNavigate }) => (
-    <div className="page-shell">
+    <main className="page-shell">
         <div className="home-shell">
 
             {/* ── Hero ── */}
@@ -25,12 +25,12 @@ const HomePage = ({ onNavigate }) => (
                 </blockquote>
 
                 <div className="home-actions">
-                    <button className="btn-primary" onClick={() => onNavigate('analysis')}>
-                        <Activity style={{ width: 18, height: 18 }} />
+                    <button className="btn-primary" onClick={() => onNavigate('analysis')} aria-label="Launch Analytics Dashboard">
+                        <Activity style={{ width: 18, height: 18 }} aria-hidden="true" />
                         Launch Analytics
                     </button>
-                    <button className="btn-outline" onClick={() => onNavigate('instructions')}>
-                        <FileText style={{ width: 18, height: 18 }} />
+                    <button className="btn-outline" onClick={() => onNavigate('instructions')} aria-label="View Application Logic">
+                        <FileText style={{ width: 18, height: 18 }} aria-hidden="true" />
                         View Logic
                     </button>
                 </div>
@@ -40,7 +40,7 @@ const HomePage = ({ onNavigate }) => (
             <aside>
                 <div className="home-card">
                     <div className="home-card-header">
-                        <div className="home-card-icon">
+                        <div className="home-card-icon" aria-hidden="true">
                             <Cpu style={{ width: 26, height: 26 }} />
                         </div>
                         <div>
@@ -84,7 +84,7 @@ const HomePage = ({ onNavigate }) => (
                 </div>
             </aside>
         </div>
-    </div>
+    </main>
 );
 
 export default HomePage;
