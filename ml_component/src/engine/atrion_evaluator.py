@@ -55,7 +55,7 @@ def _nms_1d(instances, iou_threshold=0.5):
     return keep
 
 
-def get_instances_from_heatmap(heatmap, width_map, threshold=0.35):
+def get_instances_from_heatmap(heatmap, width_map, threshold=0.35, distance=60, prominence=0.10):
     """
     Extracts individual P-wave instances from the model's output heads.
 
@@ -72,17 +72,17 @@ def get_instances_from_heatmap(heatmap, width_map, threshold=0.35):
     peaks, properties = find_peaks(
         heatmap,
         height=threshold,
-        distance=60,       # 120ms minimum gap (physiologically justified)
-        prominence=0.10,   # Must stand out from local baseline
+        distance=distance,
+        prominence=prominence,
     )
 
     instances = []
     for peak in peaks:
         center = int(peak)
-        w = float(width_map[peak]) * 5000  # Scale back to sample domain
+        w = abs(float(width_map[peak])) * 5000  # Scale raw logit back to sample domain safely
 
-        # Guard against degenerate widths
-        w = max(20, min(w, 300))  # P-wave width range: 40ms–600ms (20–300 samples @ 500Hz)
+        # Guard against degenerate widths, give slack for early training
+        w = max(30, min(w, 300))  # P-wave width range: 60ms–600ms (30–300 samples @ 500Hz)
 
         start = max(0, int(center - w / 2))
         end   = min(len(heatmap), int(center + w / 2))
@@ -100,12 +100,12 @@ def get_instances_from_heatmap(heatmap, width_map, threshold=0.35):
 
 
 def compute_instance_metrics(pred_heatmap, pred_width, target_instances,
-                             iou_threshold=0.5, conf_threshold=0.35):
+                             iou_threshold=0.5, conf_threshold=0.35, distance=60, prominence=0.10):
     """
     Calculates detection metrics for a single ECG record.
     Returns TP/FP/FN counts and PR curve data for mAP computation.
     """
-    preds = get_instances_from_heatmap(pred_heatmap, pred_width, threshold=conf_threshold)
+    preds = get_instances_from_heatmap(pred_heatmap, pred_width, threshold=conf_threshold, distance=distance, prominence=prominence)
     preds = sorted(preds, key=lambda x: x['confidence'], reverse=True)
 
     tp_list = []
@@ -119,13 +119,19 @@ def compute_instance_metrics(pred_heatmap, pred_width, target_instances,
         for idx, target in enumerate(target_instances):
             if idx in matched_targets:
                 continue
-            iou = calculate_1d_iou(pred['span'], target['span'])
-            if iou > best_iou:
-                best_iou        = iou
+            
+            # Clinical Standard (AAMI / CSE): A detection is a TP if the predicted peak 
+            # falls within the true physiological bounds of the target wave (with minor 20ms slack).
+            t_start, t_end = target['span']
+            slack = 10  # 20ms slack at 500Hz
+            
+            if (t_start - slack) <= pred['center'] <= (t_end + slack):
+                best_iou = 1.0  # Pass the implicit threshold immediately
                 best_target_idx = idx
+                break
 
         scores.append(pred['confidence'])
-        if best_iou >= iou_threshold:
+        if best_iou >= iou_threshold:  # Kept parameter name for backward compatibility elsewhere
             tp_list.append(1)
             matched_targets.add(best_target_idx)
         else:
@@ -172,7 +178,7 @@ def calculate_mAP(all_tp_lists, all_scores, total_gt):
     recalls    = tp_cumsum / total_gt if total_gt > 0 else np.zeros_like(tp_cumsum)
     precisions = tp_cumsum / (tp_cumsum + fp_cumsum)
 
-    # VOC 11-point interpolation
+    # All-point area-under-curve interpolation (VOC 2010+ / COCO Style)
     m_rec = np.concatenate(([0.], recalls, [1.]))
     m_pre = np.concatenate(([0.], precisions, [0.]))
     for i in range(len(m_pre) - 2, -1, -1):

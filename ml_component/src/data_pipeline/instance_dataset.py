@@ -50,7 +50,9 @@ class AtrionInstanceDataset(Dataset):
         
         # 4. Lead Dropout
         if np.random.rand() > 0.8:
-            drop_indices = np.random.choice(12, size=np.random.randint(1, 3), replace=False)
+            # Assume Lead II is index 1. Preclude it from being dropped to avoid contradictory supervision.
+            available_leads = [i for i in range(12) if i != 1]
+            drop_indices = np.random.choice(available_leads, size=np.random.randint(1, 4), replace=False)
             sig[drop_indices, :] = 0
             
         # Update labels for shift
@@ -59,12 +61,14 @@ class AtrionInstanceDataset(Dataset):
             new_c = c + shift
             if 0 <= new_c < self.seq_len: new_centers.append(new_c)
         for s_start, s_end in spans:
-            new_s = (max(0, s_start + shift), min(self.seq_len, s_end + shift))
-            new_spans.append(new_s)
+            new_s_start = max(0, s_start + shift)
+            new_s_end = min(self.seq_len, s_end + shift)
+            if new_s_end - new_s_start >= 20: # Physiologically valid minimum width
+                new_spans.append((new_s_start, new_s_end))
             
         return sig, new_centers, new_spans
 
-    def _generate_heatmap(self, centers, sigma=12):
+    def _generate_heatmap(self, centers, sigma=6):
         """
         Generates Gaussian-smoothed heatmap.
         Sigma=12 (~24ms @ 500Hz) provides a stable target spread.
@@ -84,11 +88,11 @@ class AtrionInstanceDataset(Dataset):
         centers = [p[1] for p in ann['p_waves']]
         spans = [(p[0], p[2]) for p in ann['p_waves']]
         
+        # Normalize first to avoid neutralizing amplitude/noise scaling
+        sig = self._normalize(sig)
+
         if self.is_train:
             sig, centers, spans = self._augment(sig, centers, spans)
-            
-        # Normalize
-        sig = self._normalize(sig)
         
         # Targets
         heatmap = np.zeros((1, self.seq_len), dtype=np.float32)
@@ -97,9 +101,10 @@ class AtrionInstanceDataset(Dataset):
         
         heatmap[0] = self._generate_heatmap(centers)
         for (s_start, s_end), center in zip(spans, centers):
+            w = (s_end - s_start) / self.seq_len
             if 0 <= center < self.seq_len:
-                width_map[0, int(center)] = (s_end - s_start) / self.seq_len
                 mask[0, int(s_start):int(s_end)] = 1.0
+                width_map[0, int(s_start):int(s_end)] = w
             
         return {
             'signal': torch.FloatTensor(sig),

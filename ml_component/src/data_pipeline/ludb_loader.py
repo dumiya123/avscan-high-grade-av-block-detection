@@ -56,39 +56,38 @@ class LUDBLoader:
             padding = self.target_length - signal.shape[1]
             signal = np.pad(signal, ((0,0), (0, padding)), mode='constant')
 
-        # 3. Load Annotations (LUDB uses different annotators, we'll use Lead II annotations)
-        # LUDB lead II annotations usually have the extension .i2 (lead i, ii, etc)
-        # We look for P-wave components (P_onset, P_peak, P_offset)
+        # 3. Load Annotations
         p_waves = []
-        try:
-            # Try to get labels for Lead II specifically (standard choice)
-            ann = wfdb.rdann(record_path, 'ii')
-            
-            # LUDB uses specific characters for onsets/offsets
-            # '(' : onset, 'p' : peak, ')' : offset
-            # We need to find sequences of ( p )
-            
-            i = 0
-            while i < len(ann.sample):
-                if ann.symbol[i] == '(' and i+2 < len(ann.sample):
-                    if ann.symbol[i+1] == 'p' and ann.symbol[i+2] == ')':
-                        onset = ann.sample[i]
-                        peak = ann.sample[i+1]
-                        offset = ann.sample[i+2]
-                        
-                        # Only keep if within our target length
-                        if offset < self.target_length:
-                            p_waves.append((onset, peak, offset))
-                        i += 3
+        annotation_found = False
+        leads_to_try = ['ii', 'v1', 'v5', 'i', 'iii', 'avf']
+        
+        for lead in leads_to_try:
+            try:
+                ann = wfdb.rdann(record_path, lead)
+                annotation_found = True
+                i = 0
+                while i < len(ann.sample):
+                    if ann.symbol[i] == '(' and i+2 < len(ann.sample):
+                        if ann.symbol[i+1] == 'p' and ann.symbol[i+2] == ')':
+                            onset = ann.sample[i]
+                            peak = ann.sample[i+1]
+                            offset = ann.sample[i+2]
+                            if offset < self.target_length:
+                                p_waves.append((onset, peak, offset))
+                            i += 3
+                        else:
+                            i += 1
                     else:
                         i += 1
-                else:
-                    i += 1
-        except Exception as e:
-            # If Lead II annotation is missing, skip or try another lead
-            pass
+                if annotation_found:
+                    break
+            except Exception:
+                continue
 
-        return signal, p_waves
+        if not annotation_found:
+            print(f"⚠️ Warning: No valid annotation file found for {record_name} in standard leads.")
+
+        return signal, p_waves, annotation_found
 
     def get_all_data(self) -> Tuple[np.ndarray, List[Dict]]:
         """
@@ -99,8 +98,8 @@ class LUDBLoader:
         
         print(f"📂 Loading {len(self.records)} LUDB records...")
         for r_name in self.records:
-            sig, p_waves = self.load_record(r_name)
-            if len(p_waves) > 0: # Only keep records with P-wave labels
+            sig, p_waves, ann_found = self.load_record(r_name)
+            if ann_found: # Keep records even if len(p_waves) == 0, as long as it was annotated
                 all_signals.append(sig)
                 all_annotations.append({'p_waves': p_waves})
         
