@@ -597,7 +597,7 @@ class AVBlockPredictor:
 
         heatmap   = out['heatmap'][0].cpu().numpy()
         width_map = out['width'][0].cpu().numpy()
-        instances = get_instances_from_heatmap(heatmap, width_map, threshold=0.35)
+        instances = get_instances_from_heatmap(heatmap, width_map, threshold=0.45, distance=60)
 
         r_peaks = _detect_qrs(signal[1])
         spans   = [inst['span'] for inst in instances]

@@ -27,7 +27,7 @@ app.add_middleware(
 )
 
 # Constants
-CHECKPOINT_PATH = Path(__file__).parent.parent / "ml_component/checkpoints/best_model.pth"
+CHECKPOINT_PATH = Path(__file__).parent.parent / "ml_component/outputs/weights/atrion_hybrid_best.pth"
 UPLOAD_DIR = Path(__file__).parent / "uploads"
 REPORT_DIR = Path(__file__).parent / "reports"
 
