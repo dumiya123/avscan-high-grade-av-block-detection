@@ -123,16 +123,18 @@ async def analyze_ecg(file: UploadFile = File(...)):
         # Clean up input file
         os.remove(temp_path)
         
-        # Prepare response (convert numpy arrays to lists for JSON)
-        # Subsample signal to 1000 points for smooth frontend plotting if long
+        # Subsample signal and heatmap to 1000 points for smooth frontend plotting
         orig_signal = signal.flatten()
         orig_len = len(orig_signal)
         viz_signal = orig_signal
+        viz_heatmap = result['xai']['heatmap']
         scale_factor = 1.0
         
         if orig_len > 1000:
             indices = np.linspace(0, orig_len - 1, 1000).astype(int)
             viz_signal = orig_signal[indices]
+            heatmap_np = np.array(result['xai']['heatmap'])
+            viz_heatmap = heatmap_np[indices].tolist()
             scale_factor = 1000.0 / orig_len
 
         # Scale wave boundaries and map to lowercase keys
@@ -155,6 +157,7 @@ async def analyze_ecg(file: UploadFile = File(...)):
             "diagnosis": result['diagnosis']['av_block_type'],
             "confidence": float(result['diagnosis']['confidence']),
             "severity": result['diagnosis']['severity'],
+            "clinical_metrics": result['clinical_metrics'],
             "intervals": {
                 **result['intervals'],
                 "avg_pr": float(np.mean(result['intervals']['pr'])) if result['intervals']['pr'] else 0,
@@ -162,9 +165,10 @@ async def analyze_ecg(file: UploadFile = File(...)):
             },
             "report_id": report_id,
             "explanation": result['xai']['explanation'],
-            "heatmap": result['xai']['heatmap'], # Include XAI Heatmap
+            "heatmap": viz_heatmap, 
             "signal": viz_signal.tolist(),
-            "waves": scaled_waves
+            "waves": scaled_waves,
+            "xai": result['xai']
         }
         
         return response_data
