@@ -22,30 +22,21 @@ const ECGViewer = ({
 
     if (showSegmentation && waves) {
         const categories = [
-            { data: waves.p_associated, color: 'rgb(59, 130, 246)', label: 'P-wave (Assoc)' },
-            { data: waves.p_dissociated, color: 'rgb(239, 68, 68)', label: 'P-wave (Dissoc)' },
-            { data: waves.qrs, color: 'rgb(16, 185, 129)', label: 'QRS' },
-            { data: waves.t, color: 'rgb(245, 158, 11)', label: 'T-wave' }
+            { data: waves.p_associated, color: 'rgba(59, 130, 246, 0.25)' },
+            { data: waves.p_dissociated, color: 'rgba(239, 68, 68, 0.25)' },
+            { data: waves.qrs, color: 'rgba(16, 185, 129, 0.25)' },
+            { data: waves.t, color: 'rgba(245, 158, 11, 0.25)' }
         ];
 
         categories.forEach(({ data, color }) => {
             if (!data) return;
             data.forEach(([start, end]) => {
-                const x0 = start / effectiveFs;
-                const x1 = end / effectiveFs;
-
                 shapes.push({
-                    type: 'rect',
-                    xref: 'x',
-                    yref: 'paper',
-                    x0, x1,
-                    y0: 0,
-                    y1: 1,
-                    fillcolor: color.replace('rgb', 'rgba').replace(')', ', 0.3)'),
-                    line: {
-                        color: color.replace('rgb', 'rgba').replace(')', ', 0.5)'),
-                        width: 1
-                    },
+                    type: 'rect', xref: 'x', yref: 'paper',
+                    x0: start / effectiveFs, x1: end / effectiveFs,
+                    y0: 0, y1: 1,
+                    fillcolor: color,
+                    line: { width: 0 },
                     layer: 'below'
                 });
             });
@@ -55,7 +46,6 @@ const ECGViewer = ({
     return (
         <div className={cn("w-full h-full bg-white", className)}>
             <Plot
-                // ... same plot config ...
                 data={[
                     {
                         x: time,
@@ -136,8 +126,8 @@ const ECGViewer = ({
 
 const LegendItem = ({ color, label }) => (
     <div className="flex items-center gap-2">
-        <div style={{ backgroundColor: color, border: `1px solid ${color.replace('0.4', '0.6')}` }} 
-             className="w-3 h-3 rounded-sm shadow-sm" />
+        <div style={{ backgroundColor: color, border: `1px solid ${color.replace('0.4', '0.6')}` }}
+            className="w-3 h-3 rounded-sm shadow-sm" />
         <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{label}</span>
     </div>
 );
