@@ -1,0 +1,12 @@
+This directory holds all auto-generated test outputs.
+Do NOT commit to source control (add tests/outputs/ to .gitignore).
+
+Generated files:
+  benchmark_results.csv      — Phase 2 comparative metrics table
+  benchmark_summary.txt      — Phase 2 human-readable summary
+  aami_metrics_full.csv      — Phase 3 per-record AAMI detail
+  aami_stats.txt             — Phase 3 Wilcoxon + Cohen's d results
+  attention_maps/            — Phase 4 high-res PNG XAI figures
+  ch8_tables.tex             — Phase 5 LaTeX thesis tables
+  ch8_ablation.csv           — Phase 5 ablation study results
+  ch8_draft.md               — Phase 5 Results & Discussion draft

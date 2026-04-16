@@ -1,0 +1,96 @@
+# =============================================================================
+# ATRIONNET CLINICAL VALIDATION CONFIGURATION
+# [Sup #2, #5, #9, #10]
+# AAMI EC57 Compliant — DO NOT use IoU/Dice for signal segmentation metrics.
+# =============================================================================
+
+# ---------------- Reproducibility ----------------
+seed: 42
+deterministic: true          # torch.backends.cudnn.deterministic = True
+
+# ---------------- Data Paths ----------------
+paths:
+  project_root:  "."
+  data_dir:      "data/raw/ludb"
+  weights_best:  "outputs/weights/atrion_hybrid_best.pth"
+  weights_alt:   "weights/AtrionNet_H1_best.pth"
+  test_outputs:  "tests/outputs"
+
+# ---------------- LUDB Dataset ----------------
+dataset:
+  sampling_rate:  500          # Hz
+  target_length:  5000         # samples (10-second window)
+  n_leads:        12
+  split_seed:     42
+  train_ratio:    0.70
+  val_ratio:      0.15
+  test_ratio:     0.15         # ~15 records from LUDB-200
+
+# ---------------- Model Inference Thresholds ----------------
+# Matches ATRION_CONFIG in train.py exactly — [Sup #2]
+inference:
+  conf_threshold:     0.45     # physiologically justified (excludes T-waves ~0.1-0.2)
+  distance_samples:   60       # 120ms minimum inter-peak gap at 500Hz
+  prominence:         0.10     # 10% structural prominence
+  nms_iou_threshold:  0.50
+
+# ---------------- AAMI EC57 Tolerances ----------------
+# AAMI EC57 Section 3.1: Detection tolerance window
+# [Sup #9, #10]
+aami_ec57:
+  tolerance_tight_ms:   50     # ±50ms  → ±25 samples at 500Hz
+  tolerance_loose_ms:   100    # ±100ms → ±50 samples at 500Hz
+  tolerance_tight_smp:  25
+  tolerance_loose_smp:  50
+  min_sensitivity:      0.75   # AAMI minimum Se threshold
+  min_positive_pred:    0.75   # AAMI minimum +P threshold
+
+# ---------------- Clinical Metric Targets ----------------
+# Per AAMI EC57 and literature benchmarks
+thresholds:
+  sensitivity_target:   0.80
+  positive_pred_target: 0.80
+  fpr_target:           0.10   # False Positive Rate ceiling
+  jaccard_target:       0.70   # Temporal Jaccard (interval-based)
+
+# ---------------- Noise Robustness ----------------
+# [Sup #5] Synthetic noise injection parameters
+noise:
+  gaussian:
+    snr_levels_db: [40, 30, 20, 15, 10]   # dB — 10dB is clinical worst-case
+  baseline_wander:
+    frequencies_hz: [0.05, 0.1, 0.2, 0.5] # BW is typically < 1Hz
+    amplitude_mv:   [0.05, 0.1, 0.2, 0.5]
+
+# ---------------- Baseline Models ----------------
+# [Sup #3, #6] SOTA Competitors for benchmarking
+baselines:
+  pan_tompkins:
+    name:        "Rule-Based (Pan-Tompkins Variant)"
+    description: "Classical QRS + P-wave detection rule pipeline"
+  unet_1d:
+    name:        "1D U-Net (Custom-Trained Baseline)"
+    description: "AtrionNetBaseline from atrion_net.py — same training data"
+  cnn_lstm:
+    name:        "CNN-LSTM"
+    description: "Lightweight 1D CNN + LSTM hybrid encoder-decoder"
+
+# ---------------- Statistical Tests ----------------
+# [Sup #9, #10]
+statistics:
+  wilcoxon_alpha:   0.05       # Significance level
+  cohens_d_small:   0.2
+  cohens_d_medium:  0.5
+  cohens_d_large:   0.8
+
+# ---------------- Error Taxonomy ----------------
+# Clinical error categorization for XAI audit
+error_types:
+  type_I:  "T-wave confusion (FP due to heatmap peak on T-wave)"
+  type_II: "Low-amplitude P-wave miss (FN in high-grade AV block)"
+
+# ---------------- Reporting ----------------
+reporting:
+  latex_caption_precision: 4
+  figure_dpi:              300
+  figure_format:           "png"
