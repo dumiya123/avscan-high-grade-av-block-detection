@@ -1,0 +1,5 @@
+Model,Parameters (Millions),Inference Time (ms/sample)
+ATRIONNET (Proposed),3.185699,114.90360498428345
+U-Net (Baseline),0.332291,31.59369707107544
+CNN-LSTM (Baseline),0.228035,120.5156922340393
+CNN-1D (Baseline),0.071875,15.428690910339355
