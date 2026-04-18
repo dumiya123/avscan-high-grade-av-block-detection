@@ -26,7 +26,7 @@ const Navbar = ({ currentView, onNavigate }) => {
                     <div className="navbar-logo">
                         <Activity className="w-4 h-4 text-white" />
                     </div>
-                    <span className="navbar-brand-name">AtrioNet</span>
+                    <span className="navbar-brand-name">AtrionNet</span>
                 </button>
 
                 {/* Navigation tabs */}

@@ -11,11 +11,11 @@ const HomePage = ({ onNavigate }) => (
 
                 <div>
                     <h1 className="home-title">
-                        AtrioNet <span>.</span>
+                        AtrionNet <span>.</span>
                     </h1>
                     <h2 className="home-subtitle">
                         High-Grade AV Block Detection<br />
-                        <strong>Powered by AtrioNet Fusion.</strong>
+                        <strong>Powered by AtrionNet Fusion.</strong>
                     </h2>
                 </div>
 
@@ -45,7 +45,7 @@ const HomePage = ({ onNavigate }) => (
                         </div>
                         <div>
                             <p className="home-card-label">Core Engine</p>
-                            <p className="home-card-name">AtrioNet v1.0</p>
+                            <p className="home-card-name">AtrionNet v1.0</p>
                         </div>
                     </div>
 

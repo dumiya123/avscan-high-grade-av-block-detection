@@ -18,7 +18,7 @@ const aboutSections = [
         id: 'solution',
         icon: Cpu,
         title: 'The Solution',
-        content: 'AtrioNet utilizes a Multi-Task Attention Fusion architecture to simultaneously localize wave landmarks and classify rhythmic patterns. It is specifically engineered for dissociated P-waves detection, providing clear visual evidence of AV dissociation to bridge the gap between AI performance and clinical trust.',
+        content: 'AtrionNet utilizes a Multi-Task Attention Fusion architecture to simultaneously localize wave landmarks and classify rhythmic patterns. It is specifically engineered for dissociated P-waves detection, providing clear visual evidence of AV dissociation to bridge the gap between AI performance and clinical trust.',
     },
     {
         id: 'features',
@@ -38,7 +38,7 @@ const AboutPage = () => (
     <div className="page-shell">
         <div className="instr-shell">
             <header className="instr-header">
-                <h1 className="instr-title">About the AtrioNet System</h1>
+                <h1 className="instr-title">About the AtrionNet System</h1>
                 <p className="instr-subtitle">
                     A clinical-grade research framework for Explainable ECG Signal Analysis.
                 </p>
@@ -64,7 +64,7 @@ const AboutPage = () => (
 
             <footer className="instr-footer">
                 <p className="system-status-label" style={{ color: 'var(--text-muted)' }}>
-                    AtrioNet Research Prototype &bull; Version 1.0 &bull; 2026
+                    AtrionNet Research Prototype &bull; Version 1.0 &bull; 2026
                 </p>
             </footer>
         </div>

@@ -38,7 +38,7 @@ const Footer = () => {
                     <div className="flex items-center gap-3">
                         <Cpu className="w-5 h-5 text-indigo-600" />
                         <div className="text-left">
-                            <p className="text-[10px] font-black text-slate-600">AtrioNet Neural Engine</p>
+                            <p className="text-[10px] font-black text-slate-600">AtrionNet Neural Engine</p>
                             <p className="text-[8px] font-bold text-slate-400 normal-case tracking-normal">Multi-Task Attention Architecture</p>
                         </div>
                     </div>

@@ -287,7 +287,7 @@ const AnalysisPage = () => {
                         <ResultSection title="Model Info" icon={Info}>
                             <div className="model-info-row">
                                 <span className="model-info-label">Model Version</span>
-                                <span className="model-info-value">AtrioNet v2.4</span>
+                                <span className="model-info-value">AtrionNet v2.4</span>
                             </div>
                             <div className="model-info-row">
                                 <span className="model-info-label">Inference Time</span>
