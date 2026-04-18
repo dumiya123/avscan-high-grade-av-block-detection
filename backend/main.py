@@ -67,9 +67,21 @@ async def preview_ecg(file: UploadFile = File(...)):
         with open(temp_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        # Load signal
+        # Load and extract Lead II (consistent with /analyze)
         signal = np.load(temp_path)
-        orig_signal = signal.flatten()
+        analysed_signal = np.asarray(signal, dtype=np.float32)
+        if analysed_signal.ndim == 2:
+            if analysed_signal.shape[0] == 12:
+                analysed_signal = analysed_signal[1]
+            elif analysed_signal.shape[1] == 12:
+                analysed_signal = analysed_signal[:, 1]
+            else:
+                analysed_signal = analysed_signal.flatten()
+        else:
+            analysed_signal = analysed_signal.flatten()
+            
+        # Target same 10-second window (5000 samples)
+        orig_signal = analysed_signal[:5000]
         orig_len = len(orig_signal)
         
         # Subsample for smooth frontend plotting (1000 points)
@@ -123,17 +135,32 @@ async def analyze_ecg(file: UploadFile = File(...)):
         # Clean up input file
         os.remove(temp_path)
         
-        # Subsample signal and heatmap to 1000 points for smooth frontend plotting
-        orig_signal = signal.flatten()
-        orig_len = len(orig_signal)
-        viz_signal = orig_signal
+        # Extract Lead II and cap to analyzed length (matches predictor.py logic)
+        analysed_signal = np.asarray(signal, dtype=np.float32)
+        if analysed_signal.ndim == 2:
+            if analysed_signal.shape[0] == 12:
+                analysed_signal = analysed_signal[1]
+            elif analysed_signal.shape[1] == 12:
+                analysed_signal = analysed_signal[:, 1]
+            else:
+                analysed_signal = analysed_signal.flatten()
+        else:
+            analysed_signal = analysed_signal.flatten()
+            
+        # Match the 5000 sample cap from predictor.py
+        target_len = 5000
+        analysed_signal = analysed_signal[:target_len]
         viz_heatmap = result['xai']['heatmap']
+        heatmap_np = np.array(viz_heatmap)
+        
+        # Subsample signal and heatmap to 1000 points for smooth frontend plotting
+        orig_len = len(analysed_signal)
+        viz_signal = analysed_signal
         scale_factor = 1.0
         
         if orig_len > 1000:
             indices = np.linspace(0, orig_len - 1, 1000).astype(int)
-            viz_signal = orig_signal[indices]
-            heatmap_np = np.array(result['xai']['heatmap'])
+            viz_signal = analysed_signal[indices]
             viz_heatmap = heatmap_np[indices].tolist()
             scale_factor = 1000.0 / orig_len
 
