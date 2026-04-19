@@ -8,28 +8,34 @@ const HomePage = ({ onNavigate }) => (
             <section className="home-hero-section">
                 <div className="home-hero-content">
                     <div className="home-badge">Clinical Research Prototype // 2026</div>
-                    <h1 className="home-title" style={{ fontSize: 'clamp(48px, 6vw, 76px)', color: 'var(--text-primary)', fontWeight: 900 }}>
+                    <h1 className="home-title">
                         AtrionNet<span>.</span>
                     </h1>
-                    <h2 className="home-subtitle" style={{ fontSize: 'clamp(20px, 2.5vw, 28px)', color: 'var(--text-secondary)', maxWidth: '600px', lineHeight: 1.3 }}>
+                    <h2 className="home-subtitle">
                         Next-Generation <strong>A-V Block Detection</strong> engineered with Explainable AI.
                     </h2>
-                    <p className="home-quote" style={{ fontStyle: 'normal', borderLeft: '4px solid var(--brand)', paddingLeft: '24px', fontSize: '18px', color: 'var(--text-secondary)', maxWidth: '550px' }}>
+                    <p className="home-quote">
                         Empowering clinicians with anchor-free instance segmentation for precise cardiac landmark localization and diagnostic confidence.
                     </p>
-                    <div className="home-actions" style={{ marginTop: '16px' }}>
-                        <button className="btn-primary" style={{ padding: '14px 28px' }} onClick={() => onNavigate('analysis')} aria-label="Launch Dashboard">
+                    <div className="home-actions">
+                        <button className="btn-primary home-action-btn" onClick={() => onNavigate('analysis')} aria-label="Launch Dashboard">
                             <Activity style={{ width: 20, height: 20 }} />
                             Launch Dashboard
                         </button>
-                        <button className="btn-outline" style={{ padding: '14px 28px' }} onClick={() => onNavigate('instructions')} aria-label="View Logic">
+                        <button className="btn-outline home-action-btn" onClick={() => onNavigate('instructions')} aria-label="View Logic">
                             <FileText style={{ width: 20, height: 20 }} />
                             Technical Logic
                         </button>
                     </div>
                 </div>
                 <div className="home-hero-viz">
-                    <img src="/assets/hero-viz.png" alt="AtrionNet AI Visualization" />
+                    <img 
+                        src="/assets/hero-viz.png" 
+                        alt="AtrionNet AI Visualization" 
+                        width="600"
+                        height="400"
+                        fetchpriority="high"
+                    />
                 </div>
             </section>
 
@@ -108,5 +114,3 @@ const HomePage = ({ onNavigate }) => (
 );
 
 export default HomePage;
-
-

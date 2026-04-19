@@ -113,13 +113,14 @@ const ECGViewer = ({
 
             {/* Clinical Legend */}
             {showSegmentation && (
-                <div className="flex items-center justify-center gap-6 py-3 border-t border-slate-100 bg-slate-50/50 mt-auto">
+                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-3 px-4 border-t border-slate-100 bg-slate-50/50 mt-auto">
                     <LegendItem color="rgba(59, 130, 246, 0.4)" label="P-wave (Assoc)" />
                     <LegendItem color="rgba(239, 68, 68, 0.4)" label="P-wave (Dissoc)" />
                     <LegendItem color="rgba(16, 185, 129, 0.4)" label="QRS Complex" />
                     <LegendItem color="rgba(245, 158, 11, 0.4)" label="T-wave" />
                 </div>
             )}
+
         </div>
     );
 };

@@ -334,118 +334,101 @@ const AnalysisPage = () => {
 
             {/* Clinical XAI Inspector Modal */}
             {isXaiModalOpen && result && (
-                <div style={{
-                    position: 'fixed', inset: 0, zIndex: 1000,
-                    backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                    backdropFilter: 'blur(8px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '40px', animation: 'fadeIn 0.3s ease-out'
-                }}>
-                    <div style={{
-                        width: '100%', maxWidth: '1400px', height: '90vh',
-                        backgroundColor: 'white', borderRadius: '16px',
-                        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-                    }}>
-                        {/* Header */}
-                        <div style={{
-                            padding: '20px 30px', borderBottom: '1px solid #e2e8f0',
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            background: 'linear-gradient(to right, #f8fafc, #ffffff)'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={{ background: '#dbeafe', padding: '8px', borderRadius: '8px' }}>
-                                    <Brain style={{ color: '#2563eb', width: 20, height: 20 }} />
-                                </div>
-                                <div>
-                                    <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 }}>Clinical XAI Interpretive Inspector</h2>
-                                    <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>High-resolution attention mapping for {result.diagnosis}</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setIsXaiModalOpen(false)}
-                                style={{ padding: '8px', borderRadius: '50%', background: '#f1f5f9', color: '#475569' }}
-                            >
-                                <X style={{ width: 20, height: 20 }} />
-                            </button>
-                        </div>
-
-                        {/* Content Area */}
-                        <div style={{ flex: 1, padding: '30px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '30px' }}>
-
-                            {/* Section 1: Segmented Waveform */}
-                            <div style={{ background: '#fffcfc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px' }}>
-                                <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Activity style={{ width: 14, height: 14, color: '#64748b' }} />
-                                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Segmented Morphology View</span>
-                                </div>
-                                <div style={{ height: '320px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
-                                    <ECGViewer
-                                        signal={result.signal}
-                                        fs={500}
-                                        waves={result.waves}
-                                        showSegmentation={true}
-                                        height={320}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Section 2: Attention Heatmap */}
-                            <div style={{ background: '#fffcfc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px' }}>
-                                <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Zap style={{ width: 14, height: 14, color: '#f59e0b' }} />
-                                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Continuous Explainability Map (Heatmap)</span>
-                                </div>
-                                <div style={{ height: '220px' }}>
-                                    <XAIMap
-                                        signal={result.signal}
-                                        heatmap={result.heatmap}
-                                        waves={result.waves}
-                                        diagnosis={result}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Section 3: AI Clinical Logic */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '20px' }}>
-                                <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0' }}>
-                                    <h3 style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lead-II Diagnostic Rationale</h3>
-                                    <div style={{ columns: 2, columnGap: '30px' }}>
-                                        {result.explanation.split('\n').filter(l => l.trim()).map((line, i) => (
-                                            <p key={i} style={{
-                                                fontSize: line.startsWith('DIAGNOSIS') || line.startsWith('UNDERSTANDING') || line.startsWith('TECHNICAL') ? '11px' : '13px',
-                                                fontWeight: line.startsWith('DIAGNOSIS') || line.startsWith('UNDERSTANDING') || line.startsWith('TECHNICAL') ? 800 : 400,
-                                                color: line.startsWith('DIAGNOSIS') || line.startsWith('UNDERSTANDING') || line.startsWith('TECHNICAL') ? '#0f172a' : '#475569',
-                                                marginBottom: '10px',
-                                                textTransform: line.startsWith('DIAGNOSIS') || line.startsWith('UNDERSTANDING') || line.startsWith('TECHNICAL') ? 'uppercase' : 'none',
-                                                borderLeft: line.startsWith('DIAGNOSIS') || line.startsWith('UNDERSTANDING') || line.startsWith('TECHNICAL') ? 'none' : '2px solid #e2e8f0',
-                                                paddingLeft: line.startsWith('DIAGNOSIS') || line.startsWith('UNDERSTANDING') || line.startsWith('TECHNICAL') ? 0 : '12px'
-                                            }}>
-                                                {line}
-                                            </p>
-                                        ))}
+                <div className="modal-overlay">
+                    <div className="modal-container">
+                        <div className="modal-content">
+                            {/* Header */}
+                            <div className="modal-header">
+                                <div className="modal-title-wrap">
+                                    <div className="modal-icon-box">
+                                        <Brain className="modal-icon" />
+                                    </div>
+                                    <div>
+                                        <h2 className="modal-title">Clinical XAI Interpretive Inspector</h2>
+                                        <p className="modal-subtitle">High-resolution attention mapping for {result.diagnosis}</p>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                    <div style={{ background: '#eff6ff', padding: '20px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
-                                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Detection Focus</span>
-                                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e3a8a' }}>{result.xai?.focus_label || 'Multi-wave morphology'}</span>
+                                <button
+                                    onClick={() => setIsXaiModalOpen(false)}
+                                    className="modal-close-btn"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Content Area */}
+                            <div className="modal-body">
+
+                                {/* Section 1: Segmented Waveform */}
+                                <div className="modal-section">
+                                    <div className="modal-section-header">
+                                        <Activity className="modal-section-icon" />
+                                        <span className="modal-section-label">Segmented Morphology View</span>
                                     </div>
-                                    <div style={{ background: '#f0fdf4', padding: '20px', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
-                                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#16a34a', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Stability Audit</span>
-                                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#14532d' }}>Clinically Consistent</span>
+                                    <div className="modal-viz-box" style={{ height: '320px' }}>
+                                        <ECGViewer
+                                            signal={result.signal}
+                                            fs={500}
+                                            waves={result.waves}
+                                            showSegmentation={true}
+                                            height={320}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Section 2: Attention Heatmap */}
+                                <div className="modal-section">
+                                    <div className="modal-section-header">
+                                        <Zap className="modal-section-icon--warning" />
+                                        <span className="modal-section-label">Continuous Explainability Map (Heatmap)</span>
+                                    </div>
+                                    <div className="modal-viz-box" style={{ height: '220px' }}>
+                                        <XAIMap
+                                            signal={result.signal}
+                                            heatmap={result.heatmap}
+                                            waves={result.waves}
+                                            diagnosis={result}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Section 3: AI Clinical Logic */}
+                                <div className="modal-logic-grid">
+                                    <div className="modal-logic-box">
+                                        <h3 className="modal-logic-title">Lead-II Diagnostic Rationale</h3>
+                                        <div className="modal-logic-content">
+                                            {result.explanation.split('\n').filter(l => l.trim()).map((line, i) => (
+                                                <p key={i} className={cn(
+                                                    "modal-logic-line",
+                                                    (line.startsWith('DIAGNOSIS') || line.startsWith('UNDERSTANDING') || line.startsWith('TECHNICAL')) && "modal-logic-line--heading"
+                                                )}>
+                                                    {line}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="modal-logic-aside">
+                                        <div className="modal-info-chip modal-info-chip--blue">
+                                            <span className="modal-info-chip-label">Detection Focus</span>
+                                            <span className="modal-info-chip-value">{result.xai?.focus_label || 'Multi-wave morphology'}</span>
+                                        </div>
+                                        <div className="modal-info-chip modal-info-chip--green">
+                                            <span className="modal-info-chip-label">Stability Audit</span>
+                                            <span className="modal-info-chip-value">Clinically Consistent</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Footer */}
-                        <div style={{ padding: '15px 30px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', textAlign: 'right' }}>
-                            <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>AtrionNet Clinical Interpretation Engine v2.4 (XAI Enabled)</span>
+                            {/* Footer */}
+                            <div className="modal-footer">
+                                <span className="modal-footer-text">AtrionNet Clinical Interpretation Engine v2.4 (XAI Enabled)</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
+
         </div>
     );
 };
